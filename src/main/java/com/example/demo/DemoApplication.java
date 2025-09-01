@@ -18,5 +18,10 @@ public class DemoApplication {
     return String.format("Hello %s!", name);
   }
   // Sunna getur gert commit
+<<<<<<< HEAD
   //Silja ætlar að prufa
+=======
+
+  // Katrín líka!
+>>>>>>> 7aec8db418e5aca24274825969b4be60a5300513
 }
