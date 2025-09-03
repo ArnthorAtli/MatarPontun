@@ -20,6 +20,6 @@ public class DemoApplication {
   // Sunna getur gert commit
 
   // Katrín líka!
-  // Silja líka!
+  // Silja líka! woohoo
 
 }
