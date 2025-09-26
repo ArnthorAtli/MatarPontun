@@ -1,27 +1,21 @@
-package com.example.demo;
+package is.hi.matarpontun.controller;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import is.hi.matarpontun.model.Meal;
+import is.hi.matarpontun.service.MealService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import java.util.List;
 
-@SpringBootApplication
-@RestController
-public class DemoApplication {
-  public static void main(String[] args) {
-    SpringApplication.run(DemoApplication.class, args);
-  }
+@Controller
+public class MealController {
 
-  @GetMapping("/hello")
-  public String hello(@RequestParam(value = "name", defaultValue = "World") String name) {
-    return String.format("Hello %s!", name);
-  }
-  // Sunna getur gert commit
-
-  // Katrín líka!
-  // Silja líka! woohoo
-  public String[] faediOptions = {
+    @Autowired
+    private MealService mealService;
+    
+    public List<Meal> fetchAllMeals() {
+        return mealService.findAllMeals();
+    }
+    public String[] faediOptions = {
       "A1 - almennt fæði",
       "A2 - Hentar eldri kynslóðinni",
       "A3 - Grænmetisfæði",
@@ -56,5 +50,4 @@ public class DemoApplication {
       "FASTANDI",
       "EINNOTA"
   };
-
 }
