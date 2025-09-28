@@ -1,5 +1,6 @@
 package is.hi.matarpontun.controller;
 
+import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +17,6 @@ import java.util.Optional;
 @RequestMapping("/wards")
 public class WardController {
 
-   /* @Autowired ->> býr til smiðinn
-    private WardService wardService;
-    */
     private final WardService wardService;
 
     public WardController(WardService wardService) {
@@ -32,29 +30,25 @@ public class WardController {
     }
 
     // UC4 - create ward account
-    @PostMapping //viljum svo breyta hér að notum WardDTO
-    public ResponseEntity<Ward> createWard(@RequestParam String wardName,
-                                           @RequestParam String password) {
-        Ward newWard = new Ward(wardName, password);
-        Ward savedWard = wardService.createWard(newWard); // WardDTO
-        return ResponseEntity.ok(savedWard);
+    @PostMapping
+    public ResponseEntity<WardDTO> createWard(@RequestBody WardDTO request) {
+        Ward savedWard = wardService.createWard(new Ward(request.wardName(), request.password()));
+        return ResponseEntity.ok(new WardDTO(savedWard.getId(), savedWard.getWardName(), null));
     }
 
     // UC5 - sign inn, skilar bara success eða error
     @PostMapping("/signIn")
-    public ResponseEntity<?> signIn(@RequestParam String wardName,
-                                    @RequestParam String password) {
-        return wardService.signInAndGetData(wardName, password)
-                .map(dto -> ResponseEntity.ok(Map.of("message", "Login successful")))
-                .orElse(ResponseEntity.status(401)
-                        .body(Map.of("error", "Invalid ward name or password")));
-    }
+    public ResponseEntity<?> signIn(@RequestBody WardDTO request) {
+        return wardService.signInAndGetData(request.wardName(), request.password())
+                .map(ward -> ResponseEntity.ok(Map.of("message", "Login successful")))
+                .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
+        }
 
     // UC8 - to fetch all data
     // For now, we identify the ward by asking for wardName + password again in the request.
-    // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
-    // The only difference is: instead of @RequestParam wardName/password,
-    // we will look up the ward based on the token in the Authorization header.
+// Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
+// The only difference is: instead of @RequestParam wardName/password,
+// we will look up the ward based on the token in the Authorization header.
     @GetMapping("/data")
     public ResponseEntity<?> getWardData(@RequestParam String wardName,
                                          @RequestParam String password) {

@@ -1,6 +1,7 @@
 package is.hi.matarpontun;
 
 import is.hi.matarpontun.controller.WardController;
+import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Ward;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -62,10 +63,10 @@ public class AppRunner implements CommandLineRunner {
         System.out.print("Enter shared password: ");
         String password = scanner.nextLine();
 
-        ResponseEntity<Ward> response = wardController.createWard(wardName, password);
-        Ward ward = response.getBody();
+        ResponseEntity<WardDTO> response = wardController.createWard(new WardDTO(null, wardName, password));
+        WardDTO ward = response.getBody();
         if (ward != null) {
-            System.out.println("SUCCESS: Ward account '" + ward.getWardName() + "' created.");
+            System.out.println("SUCCESS: Ward account '" + ward.wardName() + "' created. (id=" + ward.id() + ")");
         }
     }
 
@@ -76,7 +77,8 @@ public class AppRunner implements CommandLineRunner {
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
-        ResponseEntity<?> response = wardController.signIn(wardName, password);
+        WardDTO request = new WardDTO(null, wardName, password);
+        ResponseEntity<?> response = wardController.signIn(request);
         System.out.println(response.getBody());
     }
 

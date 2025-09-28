@@ -1,6 +1,7 @@
 package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardFullDTO;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
@@ -47,7 +48,8 @@ public class WardService {
     */
 
     public Optional<WardFullDTO> signInAndGetData(String wardName, String password) {
-        return wardRepository.findByWardNameAndPassword(wardName, password)
+        WardDTO request = new WardDTO(null, wardName, password);
+        return wardRepository.findByWardNameAndPassword(request)
                 .map(this::mapToWardFullDTO);
     }
 
