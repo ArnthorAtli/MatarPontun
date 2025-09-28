@@ -3,31 +3,4 @@ package is.hi.matarpontun.dto;
 
 import java.util.List;
 
-public class WardFullDTO {
-    private Long id;
-    private String wardName;
-    private List<PatientDTO> patients; // nested patients
-
-    // --- getters & setters ---
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getWardName() {
-        return wardName;
-    }
-    public void setWardName(String wardName) {
-        this.wardName = wardName;
-    }
-
-    public List<PatientDTO> getPatients() {
-        return patients;
-    }
-    public void setPatients(List<PatientDTO> patients) {
-        this.patients = patients;
-    }
-}
-
+public record WardFullDTO(String wardName, List<PatientMealDTO> patients) {}

@@ -16,10 +16,11 @@ import java.util.Optional;
 @RequestMapping("/wards")
 public class WardController {
 
-    @Autowired
+   /* @Autowired ->> býr til smiðinn
     private WardService wardService;
+    */
+    private final WardService wardService;
 
-    //sunna setti skoða
     public WardController(WardService wardService) {
         this.wardService = wardService;
     }
@@ -31,50 +32,46 @@ public class WardController {
     }
 
     // UC4 - create ward account
-    @PostMapping
+    @PostMapping //viljum svo breyta hér að notum WardDTO
     public ResponseEntity<Ward> createWard(@RequestParam String wardName,
                                            @RequestParam String password) {
         Ward newWard = new Ward(wardName, password);
-        Ward savedWard = wardService.createWard(newWard);
+        Ward savedWard = wardService.createWard(newWard); // WardDTO
         return ResponseEntity.ok(savedWard);
     }
 
+    // UC5 - sign inn, skilar bara success eða error
     @PostMapping("/signIn")
-    public ResponseEntity<?> signIn(@RequestParam String wardName, @RequestParam String password) {
-        Optional<Ward> ward = wardService.signIn(wardName, password);
-
-        if (ward.isPresent()) {
-            return ResponseEntity.ok(Map.of("message", "Login successful"));
-        } else {
-            return ResponseEntity
-                    .status(401)
-                    .body(Map.of("error", "Invalid ward name or password"));
-        }
+    public ResponseEntity<?> signIn(@RequestParam String wardName,
+                                    @RequestParam String password) {
+        return wardService.signInAndGetData(wardName, password)
+                .map(dto -> ResponseEntity.ok(Map.of("message", "Login successful")))
+                .orElse(ResponseEntity.status(401)
+                        .body(Map.of("error", "Invalid ward name or password")));
     }
 
     // UC8 - to fetch all data
     // For now, we identify the ward by asking for wardName + password again in the request.
-// Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
-// The only difference is: instead of @RequestParam wardName/password,
-// we will look up the ward based on the token in the Authorization header.
-//
+    // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
+    // The only difference is: instead of @RequestParam wardName/password,
+    // we will look up the ward based on the token in the Authorization header.
     @GetMapping("/data")
     public ResponseEntity<?> getWardData(@RequestParam String wardName,
                                          @RequestParam String password) {
-        Optional<Ward> ward = wardService.signIn(wardName, password);
+        var wardOpt = wardService.signInAndGetData(wardName, password);
 
-        if (ward.isPresent()) {
-            return ResponseEntity.ok(ward.get());
+        if (wardOpt.isPresent()) {
+            return ResponseEntity.ok(wardOpt.get());
         } else {
-            return ResponseEntity
-                    .status(401)
+            return ResponseEntity.status(401)
                     .body(Map.of("error", "Invalid ward name or password"));
         }
     }
 
+
     // Fetch all data - jsut to see
     @GetMapping("/all-data")
-    public List<Ward> getAllData() {
+    public List<Ward> getAllData() { //notum DTO?
         return wardService.findAllWards();
     }
 

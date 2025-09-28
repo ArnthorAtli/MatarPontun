@@ -51,7 +51,7 @@ INSERT INTO wards (ward_name, password) VALUES
 -- ==========================
 -- Meals
 -- ==========================
-INSERT INTO meals (name, description, category, food_type_id) VALUES
+INSERT INTO meals (name, ingredients, category, food_type_id) VALUES
                                                                   ('Oatmeal', 'Oats, milk, raisins', 'Breakfast', 1),
                                                                   ('Chicken Soup', 'Chicken, vegetables', 'Lunch', 1),
                                                                   ('Vegetable Salad', 'Lettuce, tomato, cucumber', 'Lunch', 3),

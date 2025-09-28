@@ -2,6 +2,8 @@ package is.hi.matarpontun.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalTime;
+
 @Entity
 @Table(name = "meals")
 public class Meal {
@@ -9,23 +11,40 @@ public class Meal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
-    private String description;
+    private String ingredients;
     private String category;
 
     @ManyToOne
     @JoinColumn(name = "food_type_id")
     private FoodType foodType;
 
+    private Meal getNextMeal(Menu menu) {
+        LocalTime now = LocalTime.now();
+
+        if (now.isBefore(LocalTime.of(9, 0))) {
+            return menu.getBreakfast();
+        } else if (now.isBefore(LocalTime.of(12, 0))) {
+            return menu.getLunch();
+        } else if (now.isBefore(LocalTime.of(15, 0))) {
+            return menu.getAfternoonSnack();
+        } else if (now.isBefore(LocalTime.of(19, 0))) {
+            return menu.getDinner();
+        } else if (now.isBefore(LocalTime.of(21, 30))) {
+            return menu.getNightSnack();
+        } else {
+            // day ended → return tomorrow’s breakfast, or null for now
+            return menu.getBreakfast();
+        }
+    }
 
     // Constructors
     public Meal() {
     }
 
-    public Meal(String name, String description, String category) {
+    public Meal(String name, String ingredients, String category) {
         this.name = name;
-        this.description = description;
+        this.ingredients = ingredients;
         this.category = category;
     }
     
@@ -46,12 +65,12 @@ public class Meal {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getIngredients() {
+        return ingredients;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setIngredients(String description) {
+        this.ingredients = description;
     }
 
     public String getCategory() {
