@@ -48,8 +48,7 @@ public class WardService {
     */
 
     public Optional<WardFullDTO> signInAndGetData(String wardName, String password) {
-        WardDTO request = new WardDTO(null, wardName, password);
-        return wardRepository.findByWardNameAndPassword(request)
+        return wardRepository.findByWardNameAndPassword(wardName, password)
                 .map(this::mapToWardFullDTO);
     }
 
