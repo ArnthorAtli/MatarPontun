@@ -1,10 +1,9 @@
 package is.hi.matarpontun.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "wards")
@@ -16,6 +15,11 @@ public class Ward {
 
     private String wardName;
     private String password;
+
+    // ward.getPatients() → gives all patients in that ward.
+    @OneToMany(mappedBy = "ward", cascade = CascadeType.ALL, fetch = FetchType.EAGER) //FetchType.LAZY -> Hibernate does not load automaaticly when fetch wards
+    @JsonManagedReference
+    private List<Patient> patients;
 
     public Ward() {
     }

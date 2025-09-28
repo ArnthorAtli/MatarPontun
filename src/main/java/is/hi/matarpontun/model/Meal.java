@@ -1,10 +1,6 @@
 package is.hi.matarpontun.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "meals")
@@ -17,6 +13,11 @@ public class Meal {
     private String name;
     private String description;
     private String category;
+
+    @ManyToOne
+    @JoinColumn(name = "food_type_id")
+    private FoodType foodType;
+
 
     // Constructors
     public Meal() {

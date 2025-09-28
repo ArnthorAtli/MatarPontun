@@ -76,12 +76,12 @@ public class AppRunner implements CommandLineRunner {
         String password = scanner.nextLine();
 
         // The runner calls the controller method.
-        Optional<Ward> ward = wardController.signIn(wardName, password);
+        /*Optional<Ward> ward = wardController.signIn(wardName, password);
         if (ward.isPresent()) {
             System.out.println("SUCCESS: Sign-in successful for " + ward.get().getWardName());
         } else {
             System.out.println("FAILURE: Wrong password.");
-        }
+        }*/
     }
      private void seeAllWardAccounts() {
         List<Ward> wards = wardController.fetchAllWards();
