@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -36,10 +37,16 @@ public class WardController {
         return wardService.signIn(wardName, password);
     }*/
     @PostMapping("/signIn")
-    public ResponseEntity<Ward> signIn(@RequestParam String wardName, @RequestParam String password) {
+    public ResponseEntity<?> signIn(@RequestParam String wardName, @RequestParam String password) {
         Optional<Ward> ward = wardService.signIn(wardName, password);
-        return ward.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(401).build()); // 401 Unauthorized if not found
+
+        if (ward.isPresent()) {
+            return ResponseEntity.ok(ward.get());
+        } else {
+            return ResponseEntity
+                    .status(401)
+                    .body(Map.of("error", "Invalid ward name or password"));
+        }
     }
 
 
