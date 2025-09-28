@@ -23,29 +23,13 @@ public class WardService {
         this.wardRepository = wardRepository;
     }
 
-    /* @Autowired -> býr vanalega til smiðinn
-    private WardRepository wardRepository;
-    */
     public Ward createWard(Ward ward) {
-        return wardRepository.save(ward); //breytum seinna með DTO -> Silja
+        return wardRepository.save(ward);
     }
-    /*
-        public WardDTO createWard(Ward ward) {
-        Ward saved = wardRepository.save(ward);
-        return new WardDTO(saved.getId(), saved.getWardName());
-    }
-    */
 
     public List<Ward> findAllWards() {
-        return wardRepository.findAll(); //breytum seinna með DTO -> Silja
+        return wardRepository.findAll();
     }
-    /*
-      public List<WardDTO> findAllWards() {
-        return wardRepository.findAll().stream()
-                .map(w -> new WardDTO(w.getId(), w.getWardName()))
-                .toList();
-    }
-    */
 
     public Optional<WardFullDTO> signInAndGetData(String wardName, String password) {
         return wardRepository.findByWardNameAndPassword(wardName, password)

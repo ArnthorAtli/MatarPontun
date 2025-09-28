@@ -46,9 +46,9 @@ public class WardController {
 
     // UC8 - to fetch all data
     // For now, we identify the ward by asking for wardName + password again in the request.
-// Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
-// The only difference is: instead of @RequestParam wardName/password,
-// we will look up the ward based on the token in the Authorization header.
+    // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
+    // The only difference is: instead of @RequestParam wardName/password,
+    // we will look up the ward based on the token in the Authorization header.
     @GetMapping("/data")
     public ResponseEntity<?> getWardData(@RequestBody WardDTO request) {
 
