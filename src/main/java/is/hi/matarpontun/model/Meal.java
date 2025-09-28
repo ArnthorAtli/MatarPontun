@@ -19,26 +19,6 @@ public class Meal {
     @JoinColumn(name = "food_type_id")
     private FoodType foodType;
 
-    private Meal getNextMeal(Menu menu) {
-        LocalTime now = LocalTime.now();
-
-        if (now.isBefore(LocalTime.of(9, 0))) {
-            return menu.getBreakfast();
-        } else if (now.isBefore(LocalTime.of(12, 0))) {
-            return menu.getLunch();
-        } else if (now.isBefore(LocalTime.of(15, 0))) {
-            return menu.getAfternoonSnack();
-        } else if (now.isBefore(LocalTime.of(19, 0))) {
-            return menu.getDinner();
-        } else if (now.isBefore(LocalTime.of(21, 30))) {
-            return menu.getNightSnack();
-        } else {
-            // day ended → return tomorrow’s breakfast, or null for now
-            return menu.getBreakfast();
-        }
-    }
-
-    // Constructors
     public Meal() {
     }
 

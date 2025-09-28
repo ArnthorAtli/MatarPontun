@@ -22,7 +22,6 @@ public class Menu {
     /*@ManyToOne
     @JoinColumn(name = "meal_id")
     private Meal meal;
-
      */
 
     @ManyToOne
@@ -45,9 +44,7 @@ public class Menu {
     @JoinColumn(name = "midnightSnack_id")
     private Meal nightSnack;
 
-    //Getters and setter:
-    //___________________________
-
+    //Getters and setter:-------------------
     public Long getId() {
         return id;
     }

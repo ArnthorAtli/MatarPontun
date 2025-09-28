@@ -68,37 +68,9 @@ public class WardController {
         }
     }
 
-
-    // Fetch all data - jsut to see
+    // Fetch all data - bara til að skoða
     @GetMapping("/all-data")
     public List<Ward> getAllData() { //notum DTO?
         return wardService.findAllWards();
     }
-
-
-     /*@PostMapping
-    // This method takes simple data, calls the service, and returns a result.
-    public Ward createWard(@RequestParam String wardName, @RequestParam String password) {
-        Ward newWard = new Ward(wardName, password);
-        return wardService.createWard(newWard);
-    }*/
-
-    /*@PostMapping("/signIn")
-    // This method handles the sign-in logic.
-    public Optional<Ward> signIn(@RequestParam String wardName, @RequestParam String password) {
-        return wardService.signIn(wardName, password);
-    }*/
-
-    /*@GetMapping("/data")
-    public Optional<Ward> signInWithData(@RequestParam String wardName, @RequestParam String password) {
-        return wardService.signInWithData(wardName, password);
-    }*/
-
-    /*
-    @GetMapping
-    // method to fetch all wards
-    public List<Ward> fetchAllWards() {
-        return wardService.findAllWards();
-    }
-     */
 }

@@ -14,13 +14,11 @@ public class FoodType {
     private String typeName; // e.g. "A1"
     private String description; // e.g. "Almennt fæði"
 
-
-
     // One food type can be linked to many meals
     @OneToMany(mappedBy = "foodType")
     private List<Meal> meals;
 
-    // If you want to link a food type to a menu of the day
+    // To link a food type to a menu of the day
     @OneToOne
     @JoinColumn(name = "menu_id")
     private Menu menuOfTheDay;
@@ -44,4 +42,7 @@ public class FoodType {
 
     public Menu getMenuOfTheDay() { return menuOfTheDay; }
     public void setMenuOfTheDay(Menu menuOfTheDay) { this.menuOfTheDay = menuOfTheDay; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
 }

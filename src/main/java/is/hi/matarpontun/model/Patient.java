@@ -1,9 +1,7 @@
 package is.hi.matarpontun.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-
 
 @Entity
 @Table(name = "patients")
@@ -42,7 +40,7 @@ public class Patient {
     public Patient() {}
 
     // using the all-args constructor
-    public Patient(String name, int age, int bedNumber, String wardName) {
+    public Patient(String name, int age, int bedNumber, Ward ward) {
         this.name = name;
         this.age = age;
         this.bedNumber = bedNumber;
