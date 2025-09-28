@@ -1,10 +1,8 @@
 package is.hi.matarpontun.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "meals")
@@ -13,18 +11,20 @@ public class Meal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
-    private String description;
+    private String ingredients;
     private String category;
 
-    // Constructors
+    @ManyToOne
+    @JoinColumn(name = "food_type_id")
+    private FoodType foodType;
+
     public Meal() {
     }
 
-    public Meal(String name, String description, String category) {
+    public Meal(String name, String ingredients, String category) {
         this.name = name;
-        this.description = description;
+        this.ingredients = ingredients;
         this.category = category;
     }
     
@@ -45,12 +45,12 @@ public class Meal {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
+    public String getIngredients() {
+        return ingredients;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setIngredients(String description) {
+        this.ingredients = description;
     }
 
     public String getCategory() {

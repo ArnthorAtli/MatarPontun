@@ -1,11 +1,11 @@
 package is.hi.matarpontun;
 
-import is.hi.matarpontun.controller.MealController;
 import is.hi.matarpontun.controller.WardController;
-import is.hi.matarpontun.model.Meal;
+import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Ward;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,9 +17,6 @@ public class AppRunner implements CommandLineRunner {
 
     @Autowired
     private WardController wardController;
-
-    @Autowired
-    private MealController mealController;
 
     @Override
     public void run(String... args) throws Exception {
@@ -38,7 +35,7 @@ public class AppRunner implements CommandLineRunner {
                     signIn(scanner);
                     break;
                 case "3":
-                    seeAllWardAccounts();
+                    fetchWardData(scanner);
                     break;
                 case "4":
                     System.out.println("Exiting application. Goodbye!");
@@ -54,45 +51,45 @@ public class AppRunner implements CommandLineRunner {
         System.out.println("Please choose an option:");
         System.out.println("1. Create Ward Account (UC4)");
         System.out.println("2. Sign In (UC5)");
-        System.out.println("3. See available Ward accounts");
+        System.out.println("3. Fetch Ward Data (UC8)");
         System.out.println("4. Exit");
         System.out.print("> ");
     }
 
+    // UC4
     private void createWardAccount(Scanner scanner) {
         System.out.print("Enter ward name: ");
         String wardName = scanner.nextLine();
         System.out.print("Enter shared password: ");
         String password = scanner.nextLine();
 
-        wardController.createWard(wardName, password);
-        System.out.println("SUCCESS: Ward account '" + wardName + "' created.");
+        ResponseEntity<WardDTO> response = wardController.createWard(new WardDTO(null, wardName, password));
+        WardDTO ward = response.getBody();
+        if (ward != null) {
+            System.out.println("SUCCESS: Ward account '" + ward.wardName() + "' created. (id=" + ward.id() + ")");
+        }
     }
 
+    // UC5
     private void signIn(Scanner scanner) {
         System.out.print("Enter ward name: ");
         String wardName = scanner.nextLine();
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
-        // The runner calls the controller method.
-        Optional<Ward> ward = wardController.signIn(wardName, password);
-        if (ward.isPresent()) {
-            System.out.println("SUCCESS: Sign-in successful for " + ward.get().getWardName());
-        } else {
-            System.out.println("FAILURE: Wrong password.");
-        }
-    }
-     private void seeAllWardAccounts() {
-        List<Ward> wards = wardController.fetchAllWards();
-        if (wards.isEmpty()) {
-            System.out.println("No ward accounts found.");
-            return;
-        }
-        System.out.println("Available Ward Accounts:");
-        for (Ward ward : wards) {
-            System.out.println("- " + ward.getWardName());
-        }
+        WardDTO request = new WardDTO(null, wardName, password);
+        ResponseEntity<?> response = wardController.signIn(request);
+        System.out.println(response.getBody());
     }
 
+    // UC8
+    private void fetchWardData(Scanner scanner) {
+        System.out.print("Enter ward name: ");
+        String wardName = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        ResponseEntity<?> response = wardController.getWardData(wardName, password);
+        System.out.println(response.getBody());
+    }
 }
