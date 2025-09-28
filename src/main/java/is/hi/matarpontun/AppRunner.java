@@ -89,7 +89,8 @@ public class AppRunner implements CommandLineRunner {
         System.out.print("Enter password: ");
         String password = scanner.nextLine();
 
-        ResponseEntity<?> response = wardController.getWardData(wardName, password);
+        WardDTO request = new WardDTO(null, wardName, password);
+        ResponseEntity<?> response = wardController.getWardData(request);
         System.out.println(response.getBody());
     }
 }

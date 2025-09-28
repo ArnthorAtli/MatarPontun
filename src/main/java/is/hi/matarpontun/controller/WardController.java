@@ -50,9 +50,9 @@ public class WardController {
 // The only difference is: instead of @RequestParam wardName/password,
 // we will look up the ward based on the token in the Authorization header.
     @GetMapping("/data")
-    public ResponseEntity<?> getWardData(@RequestParam String wardName,
-                                         @RequestParam String password) {
-        var wardOpt = wardService.signInAndGetData(wardName, password);
+    public ResponseEntity<?> getWardData(@RequestBody WardDTO request) {
+
+        var wardOpt = wardService.signInAndGetData(request.wardName(), request.password());
 
         if (wardOpt.isPresent()) {
             return ResponseEntity.ok(wardOpt.get());
