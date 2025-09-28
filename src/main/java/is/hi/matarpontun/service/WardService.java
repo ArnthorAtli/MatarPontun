@@ -33,4 +33,8 @@ public class WardService {
         }
         return Optional.empty();
     }
+
+    public Optional<Ward> signInWithData(String wardName, String password) {
+        return wardRepository.findByWardNameAndPassword(wardName, password);
+    }
 }

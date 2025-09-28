@@ -53,4 +53,11 @@ public class Ward {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public List<Patient> getPatients() {
+        return patients;
+    }
+    public void setPatients(List<Patient> patients) {
+        this.patients = patients;
+    }
 }
