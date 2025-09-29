@@ -3,14 +3,11 @@ package is.hi.matarpontun.controller;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 
 @RestController
@@ -23,7 +20,7 @@ public class WardController {
         this.wardService = wardService;
     }
 
-    // default viðmót
+    // default viðmót - skilar Map
     @GetMapping
     public ResponseEntity<?> welcome() {
         return ResponseEntity.ok(Map.of("message", "Welcome to the Hospital Meal Ordering System!"));
@@ -36,7 +33,7 @@ public class WardController {
         return ResponseEntity.ok(new WardDTO(savedWard.getId(), savedWard.getWardName(), null));
     }
 
-    // UC5 - sign inn, skilar bara success eða error
+    // UC5 - sign inn, skilar bara success eða error (Boolean), bæta við tokan seinna
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@RequestBody WardDTO request) {
         return wardService.signInAndGetData(request.wardName(), request.password())
@@ -46,7 +43,7 @@ public class WardController {
 
     // (Admin/debug helper only)
     @GetMapping("/all-data")
-    public List<Ward> getAllData() { //notum DTO?
+    public List<Ward> getAllData() {
         return wardService.findAllWards();
     }
 }

@@ -1,16 +1,12 @@
 package is.hi.matarpontun.controller;
 
-import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardDTO;
-import is.hi.matarpontun.model.Patient;
-import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/patients")
@@ -18,6 +14,7 @@ public class PatientController {
 
     private final WardService wardService;
 
+    // depends á WardService því viljum að aðeins logged-in wards geti nálgast uppls.
     @Autowired
     public PatientController(WardService wardService) {
         this.wardService = wardService;
