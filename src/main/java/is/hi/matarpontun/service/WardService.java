@@ -31,10 +31,21 @@ public class WardService {
         return wardRepository.findAll();
     }
 
+    // when ward is signed in and wants to fetch data for all the corresponding patients
     public Optional<WardFullDTO> signInAndGetData(String wardName, String password) {
         return wardRepository.findByWardNameAndPassword(wardName, password)
                 .map(this::mapToWardFullDTO);
     }
+
+    // when ward is signed in and wants to fetch data for a specific the corresponding patients
+    public Optional<PatientMealDTO> signInAndGetPatientData(String wardName, String password, Long patientId) {
+        return wardRepository.findByWardNameAndPassword(wardName, password)
+                .flatMap(ward -> ward.getPatients().stream()
+                        .filter(p -> p.getPatientID().equals(patientId))
+                        .findFirst()
+                        .map(this::mapToPatientMealDTO));
+    }
+
 
     private WardFullDTO mapToWardFullDTO(Ward ward) {
         var patientDTOs = ward.getPatients().stream()

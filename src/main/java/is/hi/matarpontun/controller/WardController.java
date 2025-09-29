@@ -62,6 +62,22 @@ public class WardController {
         }
     }
 
+    // UC9: fetch single patient by ID
+    @GetMapping("/patients/{id}")
+    public ResponseEntity<?> getPatientDataById(
+            @RequestBody WardDTO request,
+            @PathVariable Long id) {
+
+        var patientOpt = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
+
+        if (patientOpt.isPresent()) {
+            return ResponseEntity.ok(patientOpt.get());
+        } else {
+            return ResponseEntity.status(404)
+                    .body(Map.of("error", "Patient not found for this ward or invalid login"));
+        }
+    }
+
     // Fetch all data - bara til að skoða
     @GetMapping("/all-data")
     public List<Ward> getAllData() { //notum DTO?
