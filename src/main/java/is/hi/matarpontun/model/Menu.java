@@ -2,6 +2,7 @@ package is.hi.matarpontun.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -12,8 +13,11 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Temporal(TemporalType.DATE) //timestamp?
-    private Date date;
+    /*@Temporal(TemporalType.DATE) //timestamp?
+    private Date date;*/
+
+    private LocalDate date;   // Which day this menu is for
+
 
     @OneToOne(mappedBy = "menuOfTheDay")
     private FoodType foodType;
@@ -51,18 +55,26 @@ public class Menu {
     public void setId(Long id) {
         this.id = id;
     }
-    public Date getDate() {
+    /*public Date getDate() {
         return date;
     }
     public void setDate(Date date) {
         this.date = date;
-    }
+    }*/
     /*public Meal getMeal() {
         return meal;
     }
     public void setMeal(Meal meal) {
         this.meal = meal;
     }*/
+    public Menu() {}
+
+    public Menu(LocalDate date, FoodType foodType) {
+        this.date = date;
+        this.foodType = foodType;
+    }
+
+    // --- getters and setters ---
     public Meal getBreakfast() {
         return breakfast;
     }
@@ -92,6 +104,13 @@ public class Menu {
     }
     public void setNightSnack(Meal nightSnack) {
         this.nightSnack = nightSnack;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
 }

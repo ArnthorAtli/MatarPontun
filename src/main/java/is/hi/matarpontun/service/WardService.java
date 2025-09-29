@@ -1,15 +1,16 @@
 package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardFullDTO;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.model.Ward;
+import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.WardRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
@@ -18,9 +19,11 @@ import java.util.Optional;
 public class WardService {
 
     private final WardRepository wardRepository;
+    private final MenuRepository menuRepository;
 
-    public WardService(WardRepository wardRepository) {
+    public WardService(WardRepository wardRepository, MenuRepository menuRepository) {
         this.wardRepository = wardRepository;
+        this.menuRepository = menuRepository;
     }
 
     public Ward createWard(Ward ward) {
@@ -31,13 +34,13 @@ public class WardService {
         return wardRepository.findAll();
     }
 
-    // when ward is signed in and wants to fetch data for all the corresponding patients
+    // UC8: Ward login + fetch all patient data
     public Optional<WardFullDTO> signInAndGetData(String wardName, String password) {
         return wardRepository.findByWardNameAndPassword(wardName, password)
                 .map(this::mapToWardFullDTO);
     }
 
-    // when ward is signed in and wants to fetch data for a specific the corresponding patients
+    // UC9: Ward login + fetch single patient by ID
     public Optional<PatientMealDTO> signInAndGetPatientData(String wardName, String password, Long patientId) {
         return wardRepository.findByWardNameAndPassword(wardName, password)
                 .flatMap(ward -> ward.getPatients().stream()
@@ -46,6 +49,7 @@ public class WardService {
                         .map(this::mapToPatientMealDTO));
     }
 
+    // --------------------- private helpers ---------------------
 
     private WardFullDTO mapToWardFullDTO(Ward ward) {
         var patientDTOs = ward.getPatients().stream()
@@ -57,7 +61,14 @@ public class WardService {
 
     private PatientMealDTO mapToPatientMealDTO(Patient patient) {
         var foodType = patient.getFoodType();
-        Menu menu = (foodType != null) ? foodType.getMenuOfTheDay() : null;
+
+        // Fetch today’s menu for this patient’s food type
+        Menu menu = null;
+        if (foodType != null) {
+            menu = menuRepository
+                    .findByFoodTypeAndDate(foodType, LocalDate.now())
+                    .orElse(null);
+        }
 
         Meal nextMeal = (menu != null) ? getNextMeal(menu) : null;
 
@@ -86,24 +97,7 @@ public class WardService {
         } else if (now.isBefore(LocalTime.of(22, 0))) {
             return menu.getNightSnack();
         } else {
-            return menu.getBreakfast(); // after 22:00 → tomorrow’s breakfast
+            return menu.getBreakfast(); // after 22:00 → assume next day breakfast
         }
     }
-
-    //-------------------------------------------------
-    /*
-    public Optional<Ward> signIn(String wardName, String password) {
-        Optional<Ward> optionalWard = wardRepository.findByWardName(wardName);
-
-        if (optionalWard.isPresent()) {
-            Ward ward = optionalWard.get();
-            //kanski bæta við hashing í framtíðinni...
-            if (ward.getPassword().equals(password)) {
-                return Optional.of(ward);
-            }
-        }
-        return Optional.empty();
-    }
-     */
-
 }
