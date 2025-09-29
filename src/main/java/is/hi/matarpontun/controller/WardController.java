@@ -44,41 +44,7 @@ public class WardController {
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
         }
 
-    // UC8 - to fetch all data
-    // For now, we identify the ward by asking for wardName + password again in the request.
-    // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
-    // The only difference is: instead of @RequestParam wardName/password,
-    // we will look up the ward based on the token in the Authorization header.
-    @GetMapping("/data")
-    public ResponseEntity<?> getWardData(@RequestBody WardDTO request) {
-
-        var wardOpt = wardService.signInAndGetData(request.wardName(), request.password());
-
-        if (wardOpt.isPresent()) {
-            return ResponseEntity.ok(wardOpt.get());
-        } else {
-            return ResponseEntity.status(401)
-                    .body(Map.of("error", "Invalid ward name or password"));
-        }
-    }
-
-    // UC9: fetch single patient by ID
-    @GetMapping("/patients/{id}")
-    public ResponseEntity<?> getPatientDataById(
-            @RequestBody WardDTO request,
-            @PathVariable Long id) {
-
-        var patientOpt = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
-
-        if (patientOpt.isPresent()) {
-            return ResponseEntity.ok(patientOpt.get());
-        } else {
-            return ResponseEntity.status(404)
-                    .body(Map.of("error", "Patient not found for this ward or invalid login"));
-        }
-    }
-
-    // Fetch all data - bara til að skoða
+    // (Admin/debug helper only)
     @GetMapping("/all-data")
     public List<Ward> getAllData() { //notum DTO?
         return wardService.findAllWards();
