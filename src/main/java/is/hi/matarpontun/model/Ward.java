@@ -17,7 +17,7 @@ public class Ward {
     private String password;
 
     // ward.getPatients() → gives all patients in that ward.
-    @OneToMany(mappedBy = "ward", cascade = CascadeType.ALL, fetch = FetchType.EAGER) //FetchType.LAZY -> Hibernate does not load automaaticly when fetch wards
+    @OneToMany(mappedBy = "ward", cascade = CascadeType.ALL, fetch = FetchType.LAZY) //FetchType.LAZY -> Hibernate does not load automaaticly when fetch wards
     @JsonManagedReference
     private List<Patient> patients;
 

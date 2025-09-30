@@ -32,10 +32,10 @@ public class AppRunner implements CommandLineRunner {
                     createWardAccount(scanner);
                     break;
                 case "2":
-                    signIn(scanner);
+                    //signIn(scanner);
                     break;
                 case "3":
-                    fetchWardData(scanner);
+                    //fetchWardData(scanner);
                     break;
                 case "4":
                     System.out.println("Exiting application. Goodbye!");
@@ -71,7 +71,7 @@ public class AppRunner implements CommandLineRunner {
     }
 
     // UC5
-    private void signIn(Scanner scanner) {
+    /*private void signIn(Scanner scanner) {
         System.out.print("Enter ward name: ");
         String wardName = scanner.nextLine();
         System.out.print("Enter password: ");
@@ -92,5 +92,5 @@ public class AppRunner implements CommandLineRunner {
         WardDTO request = new WardDTO(null, wardName, password);
         ResponseEntity<?> response = wardController.getWardData(request);
         System.out.println(response.getBody());
-    }
+    }*/
 }

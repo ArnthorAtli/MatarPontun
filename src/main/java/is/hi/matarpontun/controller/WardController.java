@@ -3,14 +3,11 @@ package is.hi.matarpontun.controller;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 
 @RestController
@@ -23,7 +20,7 @@ public class WardController {
         this.wardService = wardService;
     }
 
-    // default viðmót
+    // default viðmót - skilar Map
     @GetMapping
     public ResponseEntity<?> welcome() {
         return ResponseEntity.ok(Map.of("message", "Welcome to the Hospital Meal Ordering System!"));
@@ -36,7 +33,7 @@ public class WardController {
         return ResponseEntity.ok(new WardDTO(savedWard.getId(), savedWard.getWardName(), null));
     }
 
-    // UC5 - sign inn, skilar bara success eða error
+    // UC5 - sign inn, skilar bara success eða error (Boolean), bæta við tokan seinna
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@RequestBody WardDTO request) {
         return wardService.signInAndGetData(request.wardName(), request.password())
@@ -44,27 +41,9 @@ public class WardController {
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
         }
 
-    // UC8 - to fetch all data
-    // For now, we identify the ward by asking for wardName + password again in the request.
-    // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
-    // The only difference is: instead of @RequestParam wardName/password,
-    // we will look up the ward based on the token in the Authorization header.
-    @GetMapping("/data")
-    public ResponseEntity<?> getWardData(@RequestBody WardDTO request) {
-
-        var wardOpt = wardService.signInAndGetData(request.wardName(), request.password());
-
-        if (wardOpt.isPresent()) {
-            return ResponseEntity.ok(wardOpt.get());
-        } else {
-            return ResponseEntity.status(401)
-                    .body(Map.of("error", "Invalid ward name or password"));
-        }
-    }
-
-    // Fetch all data - bara til að skoða
+    // (Admin/debug helper only)
     @GetMapping("/all-data")
-    public List<Ward> getAllData() { //notum DTO?
+    public List<Ward> getAllData() {
         return wardService.findAllWards();
     }
 }
