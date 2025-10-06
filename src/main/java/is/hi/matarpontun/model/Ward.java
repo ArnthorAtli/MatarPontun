@@ -21,6 +21,10 @@ public class Ward {
     @OneToMany(mappedBy = "ward", cascade = CascadeType.ALL, fetch = FetchType.LAZY) //FetchType.LAZY -> Hibernate does not load automaaticly when fetch wards
     @JsonManagedReference
     private List<Patient> patients;
+    
+    @OneToMany(mappedBy = "ward", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference("ward-rooms")
+    private List<Room> rooms;
 
     public Ward() {
     }
@@ -61,4 +65,7 @@ public class Ward {
     public void setPatients(List<Patient> patients) {
         this.patients = patients;
     }
+    
+    public List<Room> getRooms() { return rooms; }
+    public void setRooms(List<Room> rooms) { this.rooms = rooms; }
 }
