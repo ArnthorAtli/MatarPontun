@@ -27,6 +27,12 @@ public class WardService {
     }
 
     public Ward createWard(Ward ward) {
+        // Check if a ward with the given name already exists
+        if (wardRepository.findByWardName(ward.getWardName()).isPresent()) {
+            // If it exists, throw an exception with a clear message
+            throw new IllegalArgumentException("A ward with the name '" + ward.getWardName() + "' already exists.");
+        }
+        
         return wardRepository.save(ward);
     }
 
