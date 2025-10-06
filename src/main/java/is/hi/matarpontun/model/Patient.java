@@ -13,10 +13,9 @@ public class Patient {
 
     private String name;
     private int age;
-    //private Room room;
-    private int bedNumber;
     @OneToOne
-
+    private int bedNumber;
+    @ManyToOne
     @JoinColumn(name = "foodtype_id")
     private FoodType foodType;
 
