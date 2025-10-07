@@ -46,4 +46,9 @@ public class WardController {
     public List<Ward> getAllData() {
         return wardService.findAllWards();
     }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
+        // Return a 409 Conflict status with the error message from the service
+        return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
+    }
 }

@@ -13,10 +13,8 @@ public class Patient {
 
     private String name;
     private int age;
-    //private Room room;
     private int bedNumber;
-    @OneToOne
-
+    @ManyToOne
     @JoinColumn(name = "foodtype_id")
     private FoodType foodType;
 
@@ -25,6 +23,11 @@ public class Patient {
     @JoinColumn(name = "ward_id") //býr til auðkennislykil dálk
     @JsonBackReference //pervents inf loop
     private Ward ward;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_id")
+    @JsonBackReference("room-patients")
+    private Room room;
 
     /*@OneToMany
     @JoinColumn(name = "allergy_id")
@@ -91,6 +94,10 @@ public class Patient {
     public void setFoodType(FoodType foodType) {
         this.foodType = foodType;
     }
-    //--------------------------------------------------
+
+    public Room getRoom() { return room; }
+
+    public void setRoom(Room room) { this.room = room; }
+    
 
 }
