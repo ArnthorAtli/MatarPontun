@@ -17,7 +17,7 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
 
-    public PatientService(PatientRepository patientRepository, RestrictionRepository restrictionRepository) {
+    public PatientService(PatientRepository patientRepository) {
         this.patientRepository = patientRepository;
     }
 
