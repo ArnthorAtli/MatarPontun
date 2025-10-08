@@ -3,12 +3,8 @@ package is.hi.matarpontun.service;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.model.Restriction;
 import is.hi.matarpontun.repository.PatientRepository;
-import is.hi.matarpontun.repository.RestrictionRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Optional;
 
@@ -17,7 +13,7 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
 
-    public PatientService(PatientRepository patientRepository, RestrictionRepository restrictionRepository) {
+    public PatientService(PatientRepository patientRepository) {
         this.patientRepository = patientRepository;
     }
 
