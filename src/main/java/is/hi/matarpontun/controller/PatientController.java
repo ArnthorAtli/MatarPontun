@@ -1,6 +1,9 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.model.Restriction;
+import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +16,13 @@ import java.util.Map;
 public class PatientController {
 
     private final WardService wardService;
+    private final PatientService patientService;
 
     // depends á WardService því viljum að aðeins logged-in wards geti nálgast uppls.
     @Autowired
-    public PatientController(WardService wardService) {
+    public PatientController(WardService wardService, PatientService patientService) {
         this.wardService = wardService;
+        this.patientService = patientService;
     }
 
     // UC8 - to fetch patients for a ward
@@ -49,6 +54,13 @@ public class PatientController {
             return ResponseEntity.status(404)
                     .body(Map.of("error", "Patient not found for this ward or invalid login"));
         }
+    }
+
+    // UC12 - add a restriction
+    @PostMapping("/{id}/restrictions")
+    public ResponseEntity<Patient> addRestriction(@PathVariable Long id, @RequestBody Restriction restriction) {
+        Patient updatedPatient = patientService.addRestriction(id, restriction);
+        return ResponseEntity.ok(updatedPatient);
     }
 }
 
