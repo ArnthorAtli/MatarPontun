@@ -56,12 +56,22 @@ public class PatientController {
         }
     }
 
-    // UC12 - add a restriction
-    @PostMapping("/{id}/restrictions")
-    public ResponseEntity<Patient> addRestriction(@PathVariable Long id, @RequestBody Restriction restriction) {
-        Patient updatedPatient = patientService.addRestriction(id, restriction);
-        return ResponseEntity.ok(updatedPatient);
+    /**
+     * UC12 – Add a single restriction string to the patient's restriction list.
+     * Example request:
+     *   POST /patients/3/restrictions/add
+     *   { "restriction": "no sugar" }
+     */
+    @PostMapping("/{id}/restrictions/add")
+    public ResponseEntity<Patient> addSingleRestriction(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        String restrictionText = request.get("restriction");
+        Patient updated = patientService.addSingleRestriction(id, restrictionText);
+        return ResponseEntity.ok(updated);
     }
+
 }
 
 

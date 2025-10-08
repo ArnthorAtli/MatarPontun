@@ -15,4 +15,14 @@ public class Restriction {
     private List<String> restrictions = new ArrayList<>();
 
     public Restriction() {}
+
+    public void setRestrictions(List<String> restrictions) {
+        this.restrictions = restrictions;
+    }
+    public List<String> getRestrictions() {
+        return restrictions;
+    }
 }
+
+
+

@@ -21,12 +21,24 @@ public class PatientService {
         return patientRepository.findById(patientID);
     }
 
-    public Patient addRestriction(Long patientID, Restriction restriction) {
+    // Adds a single restriction string to the patient's restriction list. If the patient has no restriction yet, one is created automatically.
+    public Patient addSingleRestriction(Long patientID, String restrictionText) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
 
-        // Because of cascade = CascadeType.ALL, this will automatically save both
+        Restriction restriction = patient.getRestriction();
+
+        if (restriction == null) {
+            restriction = new Restriction();
+        }
+
+        restriction.getRestrictions().add(restrictionText);
         patient.setRestriction(restriction);
-        return patientRepository.save(patient);
+
+        Patient updated = patientRepository.save(patient);
+        updated.getRestriction().getRestrictions().size(); // load list
+        return updated;
     }
+
+
 }
