@@ -81,6 +81,18 @@ public class PatientController {
         Patient updated = patientService.addAllergy(id, allergy);
         return ResponseEntity.ok(updated);
     }
+
+    //Delete one or more restrictions
+    //Body: { "remove": ["no sugar", "no dairy"] }
+    @PatchMapping("/{id}/restrictions/remove")
+    public ResponseEntity<Patient> removeRestrictions(
+            @PathVariable Long id,
+            @RequestBody Map<String, java.util.List<String>> body) {
+
+        java.util.List<String> toRemove = body.get("remove");
+        Patient updated = patientService.removeRestrictions(id, toRemove);
+        return ResponseEntity.ok(updated);
+    }
 }
 
 

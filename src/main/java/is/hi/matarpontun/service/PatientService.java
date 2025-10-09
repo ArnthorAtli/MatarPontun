@@ -32,6 +32,21 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    // Remove one or more restrictions
+    public Patient removeRestrictions(Long patientID, java.util.List<String> toRemove) {
+        Patient patient = patientRepository.findById(patientID)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        if (toRemove != null && !toRemove.isEmpty()) {
+            java.util.Set<String> removeSet = new java.util.HashSet<>();
+            for (String r : toRemove) {
+                if (r != null) removeSet.add(r.trim());
+            }
+            patient.getRestriction().removeIf(r -> removeSet.contains(r.trim()));
+        }
+        return patientRepository.save(patient);
+    }
+
     // Adds an allergy string to the patient's allergy list. If the patient has no allergies yet, one is created automatically.
     public Patient addAllergy(Long patientID, String allergy) {
         Patient patient = patientRepository.findById(patientID)
