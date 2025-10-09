@@ -66,11 +66,21 @@ public class PatientController {
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
 
-        String restrictionText = request.get("restriction");
-        Patient updated = patientService.addRestriction(id, restrictionText);
+        String restriction = request.get("restriction");
+        Patient updated = patientService.addRestriction(id, restriction);
         return ResponseEntity.ok(updated);
     }
 
+    // Add a allergy to a patient
+    @PostMapping("/{id}/allergies/add")
+    public ResponseEntity<Patient> addAllergy(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        String allergy = request.get("allergy");
+        Patient updated = patientService.addAllergy(id, allergy);
+        return ResponseEntity.ok(updated);
+    }
 }
 
 
