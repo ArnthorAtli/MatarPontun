@@ -43,10 +43,13 @@ public class Patient {
     @JsonBackReference("room-patients")
     private Room room;
 
-    /*@OneToMany
-    @JoinColumn(name = "allergy_id")
-    private FoodAllergy allergy
-     */
+    @ElementCollection
+    @CollectionTable(
+            name = "patient_allergies",
+            joinColumns = @JoinColumn(name = "patient_id")
+    )
+    @Column(name = "allergy")
+    private List<String> allergies = new ArrayList<>();
 
     /**
      * Restrictions list stored directly on the patient.
@@ -124,5 +127,12 @@ public class Patient {
 
     public List<String> getRestriction() { return restriction; }
     public void setRestriction(List<String> restriction) { this.restriction = restriction; }
+
+    public List<String> getAllergies() {
+        return allergies;
+    }
+    public void setAllergies(List<String> allergies) {
+        this.allergies = allergies;
+    }
 }
 
