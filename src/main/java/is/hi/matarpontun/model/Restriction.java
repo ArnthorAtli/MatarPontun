@@ -14,6 +14,7 @@ public class Restriction {
     @ElementCollection
     private List<String> restrictions = new ArrayList<>();
 
+    /*
     public Restriction() {}
 
     public void setRestrictions(List<String> restrictions) {
@@ -22,6 +23,7 @@ public class Restriction {
     public List<String> getRestrictions() {
         return restrictions;
     }
+    */
 }
 
 
