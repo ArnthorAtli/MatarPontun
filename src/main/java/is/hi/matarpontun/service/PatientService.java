@@ -5,6 +5,7 @@ import is.hi.matarpontun.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
@@ -21,11 +22,14 @@ public class PatientService {
     }
 
     // Adds a single restriction string to the patient's restriction list. If the patient has no restriction yet, one is created automatically.
-    public Patient addRestriction(Long patientID, String restrictionText) {
+    public Patient addRestriction(Long patientID, String restriction) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+        // Only add if it doesn't already exist
+        if (!patient.getRestriction().contains(restriction)) {
+            patient.getRestriction().add(restriction);
+        }
 
-        patient.getRestriction().add(restrictionText);
         return patientRepository.save(patient);
     }
 }
