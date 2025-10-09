@@ -66,4 +66,28 @@ public class PatientService {
         }
         return patientRepository.save(patient);
     }
+
+    // Remove one or more allergy
+    public Patient removeAllergies(Long patientID, java.util.List<String> toRemove) {
+        Patient patient = patientRepository.findById(patientID)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        if (toRemove != null && !toRemove.isEmpty()) {
+            java.util.Set<String> removeSet = new java.util.HashSet<>();
+            for (String r : toRemove) {
+                if (r != null) removeSet.add(r.trim());
+            }
+            patient.getAllergies().removeIf(r -> removeSet.contains(r.trim()));
+        }
+        return patientRepository.save(patient);
+    }
+
+    // Remove all restrictions
+    public Patient clearAllAllergies(Long patientID) {
+        Patient patient = patientRepository.findById(patientID)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        patient.getAllergies().clear();
+        return patientRepository.save(patient);
+    }
 }
