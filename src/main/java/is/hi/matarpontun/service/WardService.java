@@ -85,7 +85,9 @@ public class WardService {
                 patient.getBedNumber(),
                 (foodType != null) ? foodType.getTypeName() : null,
                 nextMeal,
-                menu
+                menu,
+                patient.getRestriction(),
+                patient.getAllergies()
         );
     }
 
