@@ -93,6 +93,13 @@ public class PatientController {
         Patient updated = patientService.removeRestrictions(id, toRemove);
         return ResponseEntity.ok(updated);
     }
+
+    //Remove all restrictions
+    @DeleteMapping("/{id}/restrictions")
+    public ResponseEntity<Patient> clearAllRestrictions(@PathVariable Long id) {
+        Patient updated = patientService.clearAllRestrictions(id);
+        return ResponseEntity.ok(updated);
+    }
 }
 
 

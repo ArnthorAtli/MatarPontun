@@ -47,6 +47,15 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    // Remove all restrictions
+    public Patient clearAllRestrictions(Long patientID) {
+        Patient patient = patientRepository.findById(patientID)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        patient.getRestriction().clear();
+        return patientRepository.save(patient);
+    }
+
     // Adds an allergy string to the patient's allergy list. If the patient has no allergies yet, one is created automatically.
     public Patient addAllergy(Long patientID, String allergy) {
         Patient patient = patientRepository.findById(patientID)
