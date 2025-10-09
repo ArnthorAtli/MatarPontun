@@ -2,6 +2,10 @@ package is.hi.matarpontun.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * The Patient entity represents a hospital patient in the MatarPöntun system.
  * Each patient belongs to a ward and a room, and has one restriction profile and one allergies profile.
@@ -22,12 +26,12 @@ public class Patient {
     private int age;
     private int bedNumber;
 
-    // Many patients share the same FoodType
+    // Many patients share the same food type
     @ManyToOne
     @JoinColumn(name = "foodtype_id")
     private FoodType foodType;
 
-    // Many patients belong to one ward. patient.getWard() → gives the ward the patient belongs to.
+    // Many patients belong to one ward
     @ManyToOne
     @JoinColumn(name = "ward_id") //býr til auðkennislykil dálk
     @JsonBackReference //pervents inf loop
@@ -45,17 +49,19 @@ public class Patient {
      */
 
     /**
-     * Each patient has exactly one Restriction entity (1:1 relationship).
-     * The cascade = CascadeType.ALL means:
-     * - When you save a Patient, its Restriction will automatically be saved too.
-     * - When you delete a Patient, its Restriction will also be deleted.
-     *
-     * This avoids needing to manually call restrictionRepository.save() in your service.
+     * Restrictions list stored directly on the patient.
+     * @ElementCollection creates a new table `patient_restrictions`
+     * with two columns:
+     *   - patient_id (foreign key)
+     *   - restriction (the string value)
      */
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "restriction_id")
-    private Restriction restriction;
-
+    @ElementCollection
+    @CollectionTable(
+            name = "patient_restrictions",
+            joinColumns = @JoinColumn(name = "patient_id")
+    )
+    @Column(name = "restriction")
+    private List<String> restriction = new ArrayList<>();
 
     // using the empty constructor + setters
     public Patient() {}
@@ -69,12 +75,11 @@ public class Patient {
     }
 
 
-    // SETTERS AND GETTERS //
-    //----------------------------------------------
+    // ---------- Getters & Setters ----------
+
     public Ward getWard() {
         return ward;
     }
-
     public void setWard(Ward ward) {
         this.ward = ward;
     }
@@ -82,7 +87,6 @@ public class Patient {
     public Long getPatientID() {
         return patientID;
     }
-
     public void setPatientID(Long patientID) {
         this.patientID = patientID;
     }
@@ -100,12 +104,14 @@ public class Patient {
     public void setAge(int age) {
         this.age = age;
     }
+
     public int getBedNumber() {
         return bedNumber;
     }
     public void setBedNumber(int bedNumber) {
         this.bedNumber = bedNumber;
     }
+
     public FoodType getFoodType() {
         return foodType;
     }
@@ -114,15 +120,9 @@ public class Patient {
     }
 
     public Room getRoom() { return room; }
-
     public void setRoom(Room room) { this.room = room; }
 
-    public Restriction getRestriction() {
-        return restriction;
-    }
-    public void setRestriction(Restriction restriction) {
-        this.restriction = restriction;
-    }
-    
-
+    public List<String> getRestriction() { return restriction; }
+    public void setRestriction(List<String> restriction) { this.restriction = restriction; }
 }
+

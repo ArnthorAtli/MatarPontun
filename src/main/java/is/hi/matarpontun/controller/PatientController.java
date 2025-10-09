@@ -2,7 +2,6 @@ package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Patient;
-import is.hi.matarpontun.model.Restriction;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,12 +62,12 @@ public class PatientController {
      *   { "restriction": "no sugar" }
      */
     @PostMapping("/{id}/restrictions/add")
-    public ResponseEntity<Patient> addSingleRestriction(
+    public ResponseEntity<Patient> addRestriction(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
 
         String restrictionText = request.get("restriction");
-        Patient updated = patientService.addSingleRestriction(id, restrictionText);
+        Patient updated = patientService.addRestriction(id, restrictionText);
         return ResponseEntity.ok(updated);
     }
 
