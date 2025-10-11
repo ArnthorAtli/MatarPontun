@@ -9,4 +9,5 @@ public interface WardRepository extends JpaRepository<Ward, Long> {
     Optional<Ward> findByWardName(String wardName);
     Optional<Ward> findByWardNameAndPassword(String wardName, String password);
 
+    boolean existsByWardNameAndIdNot(String wardName, Long id);
 }
