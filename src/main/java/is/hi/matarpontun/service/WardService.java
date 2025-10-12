@@ -2,6 +2,7 @@ package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardFullDTO;
+import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
@@ -9,6 +10,7 @@ import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.WardRepository;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityNotFoundException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -55,6 +57,26 @@ public class WardService {
                         .map(this::mapToPatientMealDTO));
     }
 
+    public Ward updateWard(Long id, WardUpdateDTO req) {
+        Ward ward = wardRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Ward not found"));
+
+        if (req.wardName() == null || req.wardName().isBlank()) {
+            throw new IllegalArgumentException("Ward name cannot be empty.");
+        }
+        if (wardRepository.existsByWardNameAndIdNot(req.wardName(), id)) {
+            throw new IllegalArgumentException(
+                    "A ward with the name '" + req.wardName() + "' already exists.");
+        }
+        ward.setWardName(req.wardName());
+
+        if (req.password() == null || req.password().isBlank()) {
+            throw new IllegalArgumentException("Password cannot be empty.");
+        }
+
+        ward.setPassword(req.password());
+        return wardRepository.save(ward);
+    }
     // --------------------- private helpers ---------------------
 
     private WardFullDTO mapToWardFullDTO(Ward ward) {

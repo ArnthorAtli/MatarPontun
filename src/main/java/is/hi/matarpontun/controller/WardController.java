@@ -1,10 +1,12 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 import java.util.Map;
@@ -50,5 +52,20 @@ public class WardController {
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
         // Return a 409 Conflict status with the error message from the service
         return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
+    }
+
+    // UC6 – Modify account information
+    @PutMapping("/{id}")
+    public ResponseEntity<WardDTO> updateWard(
+            @PathVariable Long id,
+            @RequestBody WardUpdateDTO request) {
+
+        Ward updated = wardService.updateWard(id, request);
+        return ResponseEntity.ok(new WardDTO(updated.getId(), updated.getWardName(), null));
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 }
