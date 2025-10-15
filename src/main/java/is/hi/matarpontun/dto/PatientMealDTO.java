@@ -14,7 +14,7 @@ public record PatientMealDTO(
         int bedNumber,
         String foodTypeName,
         Meal nextMeal,
-        Menu menuOfTheDay,
+        MenuOfTheDayDTO menuOfTheDay,
         List<String> restrictions,
         List<String> allergies
 ) {}

@@ -1,5 +1,6 @@
 package is.hi.matarpontun.service;
 
+import is.hi.matarpontun.dto.MenuOfTheDayDTO;
 import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
@@ -109,6 +110,7 @@ public class PatientService {
         }
 
         Meal nextMeal = (menu != null) ? getNextMeal(menu) : null;
+        MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
 
         return new PatientMealDTO(
                 patient.getPatientID(),
@@ -118,7 +120,7 @@ public class PatientService {
                 patient.getBedNumber(),
                 (foodType != null) ? foodType.getTypeName() : null,
                 nextMeal,
-                menu,
+                menuDTO,
                 patient.getRestriction(),
                 patient.getAllergies()
         );
@@ -134,5 +136,18 @@ public class PatientService {
         else if (now.isBefore(LocalTime.of(22, 0))) return menu.getNightSnack();
         else return menu.getBreakfast(); // after 22:00 → assume next day breakfast
     }
+
+    private MenuOfTheDayDTO mapToMenuOfTheDayDTO(Menu menu) {
+        return new MenuOfTheDayDTO(
+                menu.getDate(),
+                menu.getBreakfast() != null ? menu.getBreakfast().getName() : null,
+                menu.getLunch() != null ? menu.getLunch().getName() : null,
+                menu.getAfternoonSnack() != null ? menu.getAfternoonSnack().getName() : null,
+                menu.getDinner() != null ? menu.getDinner().getName() : null,
+                menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
+        );
+    }
+
 }
+
 
