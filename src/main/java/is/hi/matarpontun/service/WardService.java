@@ -81,11 +81,17 @@ public class WardService {
         return wardRepository.save(ward);
     }
 
-    // UC2 - Order food at mealtime
-    public List<MealOrder> generateMealOrdersForWard(Long wardId) {
+    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this ward
+    public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
-        return mealOrderService.generateOrdersForPatients(ward.getPatients());
+        // Persist orders internally (system logs and kitchen)
+        mealOrderService.generateOrdersForPatients(ward.getPatients());
+
+        // Return clean DTOs for ward staff review
+        return ward.getPatients().stream()
+                .map(patientService::mapToPatientMealDTO)
+                .toList();
     }
 
     // --------------------- Private Helpers ---------------------

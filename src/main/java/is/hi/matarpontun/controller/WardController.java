@@ -1,5 +1,6 @@
 package is.hi.matarpontun.controller;
 
+import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.model.MealOrder;
@@ -42,13 +43,14 @@ public class WardController {
         return wardService.signInAndGetData(request.wardName(), request.password())
                 .map(ward -> ResponseEntity.ok(Map.of("message", "Login successful")))
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
-        }
+    }
 
     // (Admin/debug helper only)
     @GetMapping("/all-data")
     public List<Ward> getAllData() {
         return wardService.findAllWards();
     }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
         // Return a 409 Conflict status with the error message from the service
@@ -73,18 +75,18 @@ public class WardController {
     //UC2 - Order meal at mealtime
     @GetMapping("/{wardId}/order")
     public ResponseEntity<?> orderMealsForWard(@PathVariable Long wardId) {
-        List<MealOrder> orders = wardService.generateMealOrdersForWard(wardId);
+        List<PatientMealDTO> patients = wardService.generateMealOrdersForWard(wardId);
 
-        if (orders.isEmpty()) {
+        if (patients.isEmpty()) {
             return ResponseEntity.ok(Map.of(
                     "message", "No meals were ordered. Possibly no suitable meals found for this ward."
             ));
         }
 
         return ResponseEntity.ok(Map.of(
-                "message", "Meal orders successfully created.",
-                "totalOrders", orders.size(),
-                "orders", orders
+                "message", "Meal orders successfully created and logged.",
+                "totalPatients", patients.size(),
+                "patients", patients
         ));
     }
 }

@@ -43,16 +43,16 @@ public class MealOrderService {
         for (Patient patient : patients) {
             if (patient.getFoodType() == null) continue;
 
-            // 🔹 Find today’s menu for the patient’s food type
+            // Find today’s menu for the patient’s food type
             var foodType = patient.getFoodType();
             var menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
             if (menu == null) continue;
 
-            // 🔹 Select the correct meal based on current time
+            // Select the correct meal based on current time
             Meal meal = selectMealFromMenu(menu);
             if (meal == null) continue;
 
-            // 🔹 Create the MealOrder
+            // Create the MealOrder
             MealOrder order = new MealOrder();
             order.setOrderTime(now);
             order.setMealType(meal.getCategory());
@@ -65,7 +65,6 @@ public class MealOrderService {
             mealOrderRepository.save(order);
             createdOrders.add(order);
         }
-
         return createdOrders;
     }
 
@@ -82,7 +81,7 @@ public class MealOrderService {
         return menu.getNightSnack();
     }
 
-    // þetta keyrir sjálfkrafa á sceduled tímum
+    // þetta keyrir sjálfkrafa á sceduled tímum - SKOÐA TÍMA
     @Scheduled(cron = "0 0 7,12,18 * * *")
     public void generateMealOrdersForAllPatients() {
         List<Patient> allPatients = patientRepository.findAll();

@@ -147,7 +147,6 @@ public class PatientService {
                 menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
         );
     }
-
 }
 
 
