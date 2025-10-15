@@ -7,6 +7,7 @@ import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.repository.MealOrderRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
+import is.hi.matarpontun.util.MealPeriod;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -42,16 +43,15 @@ public class MealOrderService {
         for (Patient patient : patients) {
             if (patient.getFoodType() == null) continue;
 
-            // Find today’s menu for the patient’s food type
             var foodType = patient.getFoodType();
-            var menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
+            Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
             if (menu == null) continue;
 
-            // Select the correct meal based on current time
-            Meal meal = selectMealFromMenu(menu);
+            // Use the shared enum logic
+            MealPeriod period = MealPeriod.current(LocalTime.now());
+            Meal meal = period.getMealFromMenu(menu);
             if (meal == null) continue;
 
-            // Create the MealOrder
             MealOrder order = new MealOrder();
             order.setOrderTime(now);
             order.setMealType(meal.getCategory());
@@ -67,24 +67,11 @@ public class MealOrderService {
         return createdOrders;
     }
 
-    /**
-     * Determine which meal to serve based on the current time of day.
-     */
-    private Meal selectMealFromMenu(Menu menu) {
-        LocalTime now = LocalTime.now();
-
-        if (now.isBefore(LocalTime.of(9, 0))) return menu.getBreakfast();
-        if (now.isBefore(LocalTime.of(12, 0))) return menu.getLunch();
-        if (now.isBefore(LocalTime.of(15, 0))) return menu.getAfternoonSnack();
-        if (now.isBefore(LocalTime.of(19, 0))) return menu.getDinner();
-        return menu.getNightSnack();
-    }
-
-    // þetta keyrir sjálfkrafa á sceduled tímum - SKOÐA TÍMA
-    @Scheduled(cron = "0 0 7,12,18 * * *")
+    // þetta keyrir sjálfkrafa á sceduled tímum - SKOÐA TÍMA hvenær eldhúið vill fá miðana
+    @Scheduled(cron = "0 0 0,10,13,17,21 * * *")
     public void generateMealOrdersForAllPatients() {
         List<Patient> allPatients = patientRepository.findAll();
         generateOrdersForPatients(allPatients);
-        System.out.println("✅ Automatically generated orders for all wards");
+        System.out.println("Automatically generated orders for all wards");
     }
 }

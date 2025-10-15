@@ -8,6 +8,7 @@ import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.repository.MealRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
+import is.hi.matarpontun.util.MealPeriod;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -109,7 +110,12 @@ public class PatientService {
             menu = menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null);
         }
 
-        Meal nextMeal = (menu != null) ? getNextMeal(menu) : null;
+        Meal nextMeal = null;
+        if (menu != null) {
+            MealPeriod period = MealPeriod.current(LocalTime.now());
+            nextMeal = period.getMealFromMenu(menu);
+        }
+
         MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
 
         return new PatientMealDTO(
@@ -124,17 +130,6 @@ public class PatientService {
                 patient.getRestriction(),
                 patient.getAllergies()
         );
-    }
-
-    private Meal getNextMeal(Menu menu) {
-        var now = LocalTime.now();
-
-        if (now.isBefore(LocalTime.of(9, 0))) return menu.getBreakfast();
-        else if (now.isBefore(LocalTime.of(12, 0))) return menu.getLunch();
-        else if (now.isBefore(LocalTime.of(15, 0))) return menu.getAfternoonSnack();
-        else if (now.isBefore(LocalTime.of(19, 0))) return menu.getDinner();
-        else if (now.isBefore(LocalTime.of(22, 0))) return menu.getNightSnack();
-        else return menu.getBreakfast(); // after 22:00 → assume next day breakfast
     }
 
     private MenuOfTheDayDTO mapToMenuOfTheDayDTO(Menu menu) {
