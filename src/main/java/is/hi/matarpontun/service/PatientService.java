@@ -1,10 +1,17 @@
 package is.hi.matarpontun.service;
 
+import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.model.Meal;
+import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.repository.MealRepository;
+import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -12,9 +19,11 @@ import java.util.Optional;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final MenuRepository menuRepository;
 
-    public PatientService(PatientRepository patientRepository) {
+    public PatientService(PatientRepository patientRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
+        this.menuRepository = menuRepository;
     }
 
     public Optional<Patient> findById(Long patientID) {
@@ -90,4 +99,40 @@ public class PatientService {
         patient.getAllergies().clear();
         return patientRepository.save(patient);
     }
+
+    public PatientMealDTO mapToPatientMealDTO(Patient patient) {
+        var foodType = patient.getFoodType();
+
+        Menu menu = null;
+        if (foodType != null) {
+            menu = menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null);
+        }
+
+        Meal nextMeal = (menu != null) ? getNextMeal(menu) : null;
+
+        return new PatientMealDTO(
+                patient.getPatientID(),
+                patient.getName(),
+                patient.getAge(),
+                patient.getRoom().getRoomNumber(),
+                patient.getBedNumber(),
+                (foodType != null) ? foodType.getTypeName() : null,
+                nextMeal,
+                menu,
+                patient.getRestriction(),
+                patient.getAllergies()
+        );
+    }
+
+    private Meal getNextMeal(Menu menu) {
+        var now = LocalTime.now();
+
+        if (now.isBefore(LocalTime.of(9, 0))) return menu.getBreakfast();
+        else if (now.isBefore(LocalTime.of(12, 0))) return menu.getLunch();
+        else if (now.isBefore(LocalTime.of(15, 0))) return menu.getAfternoonSnack();
+        else if (now.isBefore(LocalTime.of(19, 0))) return menu.getDinner();
+        else if (now.isBefore(LocalTime.of(22, 0))) return menu.getNightSnack();
+        else return menu.getBreakfast(); // after 22:00 → assume next day breakfast
+    }
 }
+

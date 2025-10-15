@@ -2,6 +2,7 @@ package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
+import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.http.ResponseEntity;
@@ -67,5 +68,23 @@ public class WardController {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
+    }
+
+    //UC2 - Order meal at mealtime
+    @GetMapping("/{wardId}/order")
+    public ResponseEntity<?> orderMealsForWard(@PathVariable Long wardId) {
+        List<MealOrder> orders = wardService.generateMealOrdersForWard(wardId);
+
+        if (orders.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                    "message", "No meals were ordered. Possibly no suitable meals found for this ward."
+            ));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Meal orders successfully created.",
+                "totalOrders", orders.size(),
+                "orders", orders
+        ));
     }
 }

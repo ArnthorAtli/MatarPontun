@@ -10,6 +10,7 @@ public record PatientMealDTO(
         Long id,
         String name,
         int age,
+        String roomNumber,
         int bedNumber,
         String foodTypeName,
         Meal nextMeal,

@@ -13,60 +13,32 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /*@Temporal(TemporalType.DATE) //timestamp?
-    private Date date;*/
+    private LocalDate date;    // one menu per foodType per day
 
-    private LocalDate date;   // Which day this menu is for
-
-
-    @OneToOne(mappedBy = "menuOfTheDay")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "food_type_id")
     private FoodType foodType;
 
-    //sleppa?
-    /*@ManyToOne
-    @JoinColumn(name = "meal_id")
-    private Meal meal;
-     */
-
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "breakfast_id")
     private Meal breakfast;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "lunch_id")
     private Meal lunch;
 
-    @ManyToOne
-    @JoinColumn(name = "afternoonSnack_id")
+    @OneToOne
+    @JoinColumn(name = "afternoon_snack_id")
     private Meal afternoonSnack;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "dinner_id")
     private Meal dinner;
 
-    @ManyToOne
-    @JoinColumn(name = "midnightSnack_id")
+    @OneToOne
+    @JoinColumn(name = "midnight_snack_id")
     private Meal nightSnack;
 
-    //Getters and setter:-------------------
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
-    /*public Date getDate() {
-        return date;
-    }
-    public void setDate(Date date) {
-        this.date = date;
-    }*/
-    /*public Meal getMeal() {
-        return meal;
-    }
-    public void setMeal(Meal meal) {
-        this.meal = meal;
-    }*/
     public Menu() {}
 
     public Menu(LocalDate date, FoodType foodType) {
@@ -75,30 +47,41 @@ public class Menu {
     }
 
     // --- getters and setters ---
+    public Long getId() {
+        return id;
+    }
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Meal getBreakfast() {
         return breakfast;
     }
     public void setBreakfast(Meal breakfast) {
         this.breakfast = breakfast;
     }
+
     public Meal getLunch() {
         return lunch;
     }
     public void setLunch(Meal lunch) {
         this.lunch = lunch;
     }
+
     public Meal getAfternoonSnack() {
         return afternoonSnack;
     }
     public void setAfternoonSnack(Meal afternoonSnack) {
         this.afternoonSnack = afternoonSnack;
     }
+
     public Meal getDinner() {
         return dinner;
     }
     public void setDinner(Meal dinner) {
         this.dinner = dinner;
     }
+
     public Meal getNightSnack() {
         return nightSnack;
     }

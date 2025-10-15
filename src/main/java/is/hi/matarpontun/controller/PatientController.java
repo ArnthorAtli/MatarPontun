@@ -1,5 +1,6 @@
 package is.hi.matarpontun.controller;
 
+import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.service.PatientService;
@@ -62,62 +63,62 @@ public class PatientController {
      *   { "restriction": "no sugar" }
      */
     @PostMapping("/{id}/restrictions/add")
-    public ResponseEntity<Patient> addRestriction(
+    public ResponseEntity<PatientMealDTO> addRestriction(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
 
         String restriction = request.get("restriction");
         Patient updated = patientService.addRestriction(id, restriction);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     //Remove one or more restrictions
     //Body: { "remove": ["no sugar", "no dairy"] }
     @PatchMapping("/{id}/restrictions/remove")
-    public ResponseEntity<Patient> removeRestrictions(
+    public ResponseEntity<PatientMealDTO> removeRestrictions(
             @PathVariable Long id,
             @RequestBody Map<String, java.util.List<String>> body) {
 
         java.util.List<String> toRemove = body.get("remove");
         Patient updated = patientService.removeRestrictions(id, toRemove);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     //Remove all restrictions
     @DeleteMapping("/{id}/restrictions")
-    public ResponseEntity<Patient> clearAllRestrictions(@PathVariable Long id) {
+    public ResponseEntity<PatientMealDTO> clearAllRestrictions(@PathVariable Long id) {
         Patient updated = patientService.clearAllRestrictions(id);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     // Add an allergy to a patient
     @PostMapping("/{id}/allergies/add")
-    public ResponseEntity<Patient> addAllergy(
+    public ResponseEntity<PatientMealDTO> addAllergy(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
 
         String allergy = request.get("allergy");
         Patient updated = patientService.addAllergy(id, allergy);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     //Remove one or more allergy
     //Body: { "remove": ["no sugar", "no dairy"] }
     @PatchMapping("/{id}/allergies/remove")
-    public ResponseEntity<Patient> removeAllergy(
+    public ResponseEntity<PatientMealDTO> removeAllergy(
             @PathVariable Long id,
             @RequestBody Map<String, java.util.List<String>> body) {
 
         java.util.List<String> toRemove = body.get("remove");
         Patient updated = patientService.removeAllergies(id, toRemove);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     //Remove all restrictions
     @DeleteMapping("/{id}/allergies")
-    public ResponseEntity<Patient> clearAllAllergies(@PathVariable Long id) {
+    public ResponseEntity<PatientMealDTO> clearAllAllergies(@PathVariable Long id) {
         Patient updated = patientService.clearAllAllergies(id);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
 
