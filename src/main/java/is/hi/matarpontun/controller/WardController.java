@@ -3,13 +3,13 @@ package is.hi.matarpontun.controller;
 import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
-import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityNotFoundException;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,12 +51,6 @@ public class WardController {
         return wardService.findAllWards();
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
-        // Return a 409 Conflict status with the error message from the service
-        return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
-    }
-
     // UC6 – Modify account information
     @PutMapping("/{id}")
     public ResponseEntity<WardDTO> updateWard(
@@ -65,11 +59,6 @@ public class WardController {
 
         Ward updated = wardService.updateWard(id, request);
         return ResponseEntity.ok(new WardDTO(updated.getId(), updated.getWardName(), null));
-    }
-
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
-        return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 
     //UC2 - Order meal at mealtime
@@ -83,10 +72,22 @@ public class WardController {
             ));
         }
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Meal orders successfully created and logged.",
-                "totalPatients", patients.size(),
-                "patients", patients
-        ));
+        Map<String, Object> response = new LinkedHashMap<>(); // preserves key order
+        response.put("message", "Meal orders successfully created and logged.");
+        response.put("totalPatients", patients.size());
+        response.put("patients", patients);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
+        // Return a 409 Conflict status with the error message from the service
+        return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
+        return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 }

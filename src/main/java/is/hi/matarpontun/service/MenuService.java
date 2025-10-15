@@ -13,21 +13,4 @@ import java.time.LocalDate;
 @Service
 public class MenuService {
 
-    private final MenuRepository menuRepository;
-    private final FoodTypeRepository foodTypeRepository;
-
-    @Autowired
-    public MenuService(MenuRepository menuRepository, FoodTypeRepository foodTypeRepository) {
-        this.menuRepository = menuRepository;
-        this.foodTypeRepository = foodTypeRepository;
-    }
-
-    public Menu getMenuOfTheDay(Long foodTypeId) {
-        FoodType foodType = foodTypeRepository.findById(foodTypeId)
-                .orElseThrow(() -> new EntityNotFoundException("Food type not found"));
-
-        // Find today's menu for this food type
-        return menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now())
-                .orElseThrow(() -> new EntityNotFoundException("No menu found for today"));
-    }
 }

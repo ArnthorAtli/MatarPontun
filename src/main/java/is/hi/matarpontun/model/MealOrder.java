@@ -1,8 +1,5 @@
 package is.hi.matarpontun.model;
 
-import is.hi.matarpontun.model.Meal;
-import is.hi.matarpontun.model.Menu;
-import is.hi.matarpontun.model.Patient;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 

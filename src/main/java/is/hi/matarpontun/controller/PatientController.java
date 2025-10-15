@@ -120,8 +120,6 @@ public class PatientController {
         Patient updated = patientService.clearAllAllergies(id);
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
-
-
 }
 
 

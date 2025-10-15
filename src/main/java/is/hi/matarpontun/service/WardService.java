@@ -8,10 +8,6 @@ import is.hi.matarpontun.repository.*;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,13 +15,11 @@ import java.util.Optional;
 public class WardService {
 
     private final WardRepository wardRepository;
-    private final MenuRepository menuRepository;
     private final MealOrderService mealOrderService;
     private final PatientService patientService;
 
-    public WardService(WardRepository wardRepository, MenuRepository menuRepository, MealOrderService mealOrderService, PatientService patientService) {
+    public WardService(WardRepository wardRepository, MealOrderService mealOrderService, PatientService patientService) {
         this.wardRepository = wardRepository;
-        this.menuRepository = menuRepository;
         this.mealOrderService = mealOrderService;
         this.patientService = patientService;
     }
