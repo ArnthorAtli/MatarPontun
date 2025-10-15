@@ -96,4 +96,11 @@ public class Menu {
         this.date = date;
     }
 
+    public FoodType getFoodType() {
+        return foodType;
+    }
+    public void setFoodType(FoodType foodType) {
+        this.foodType = foodType;
+    }
+
 }

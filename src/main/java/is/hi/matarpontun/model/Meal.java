@@ -18,7 +18,7 @@ public class Meal {
     private String category;
 
     @ManyToOne
-    //@JsonIgnore
+    @JsonIgnore
     @JoinColumn(name = "food_type_id")
     private FoodType foodType;
 
