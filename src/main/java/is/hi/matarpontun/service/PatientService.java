@@ -2,9 +2,12 @@ package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.MenuOfTheDayDTO;
 import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.dto.RestrictionUpdateResultDTO;
+import is.hi.matarpontun.model.FoodType;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MealRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
@@ -15,17 +18,105 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final FoodTypeRepository foodTypeRepository;
     private final MenuRepository menuRepository;
 
-    public PatientService(PatientRepository patientRepository, MenuRepository menuRepository) {
+   public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
+        this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
+    }
+
+    // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
+    public RestrictionUpdateResultDTO addRestrictionAndReassignFoodType(Long patientId, String restriction) {
+        // Step 1: Find the patient and add the new restriction.
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient with ID " + patientId + " not found."));
+
+        if (restriction != null && !restriction.isBlank() && !patient.getRestriction().contains(restriction)) {
+            patient.getRestriction().add(restriction);
+        }
+
+        // Step 2: Determine the patient's next scheduled meal based on their current diet.
+        MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());
+        Meal nextMeal = null;
+        if (patient.getFoodType() != null) {
+            Optional<Menu> currentMenuOpt = menuRepository.findByFoodTypeAndDate(patient.getFoodType(), LocalDate.now());
+            if (currentMenuOpt.isPresent()) {
+                nextMeal = currentPeriod.getMealFromMenu(currentMenuOpt.get());
+            }
+        }
+
+        // Step 3: Check if the new restriction creates a conflict with the next meal.
+        boolean hasConflict = checkMealForConflicts(nextMeal, patient);
+
+        // Case A: No conflict exists. Save the patient and return a success message.
+        if (nextMeal == null || !hasConflict) {
+            patientRepository.save(patient);
+            String mealName = (nextMeal != null) ? nextMeal.getName() : "No scheduled meal";
+            String mealIngredients = (nextMeal != null) ? nextMeal.getIngredients() : "N/A";
+            return new RestrictionUpdateResultDTO(
+                "Restriction '" + restriction + "' added successfully. The patient's next meal is still suitable.",
+                patient.getFoodType() != null ? patient.getFoodType().getTypeName() : "N/A",
+                mealName,
+                mealIngredients
+            );
+        }
+
+        // Case B: A conflict exists. Loop through all food types to find a suitable alternative.
+        List<FoodType> allFoodTypes = foodTypeRepository.findAll();
+        for (FoodType potentialFoodType : allFoodTypes) {
+            Optional<Menu> potentialMenuOpt = menuRepository.findByFoodTypeAndDate(potentialFoodType, LocalDate.now());
+            if (potentialMenuOpt.isPresent()) {
+                Meal potentialMeal = currentPeriod.getMealFromMenu(potentialMenuOpt.get());
+                if (potentialMeal != null && !checkMealForConflicts(potentialMeal, patient)) {
+                    // Alternative found! Update the patient's diet.
+                    patient.setFoodType(potentialFoodType);
+                    patientRepository.save(patient);
+
+                    return new RestrictionUpdateResultDTO(
+                        "Conflict detected! Patient has been successfully reassigned to a new diet.",
+                        potentialFoodType.getTypeName(),
+                        potentialMeal.getName(),
+                        potentialMeal.getIngredients()
+                    );
+                }
+            }
+        }
+
+        // Case C: Conflict exists, but no alternative could be found.
+        patientRepository.save(patient); // Save the patient with the new restriction anyway.
+        return new RestrictionUpdateResultDTO(
+            "Restriction '" + restriction + "' added, but a conflict was detected and NO suitable alternative food type could be found. Manual review required.",
+            patient.getFoodType().getTypeName(),
+            nextMeal.getName(),
+            nextMeal.getIngredients()
+        );
+    }
+
+    // Helper method to check a meal against all of a patient's restrictions and allergies.
+    private boolean checkMealForConflicts(Meal meal, Patient patient) {
+        if (meal == null || meal.getIngredients() == null) return false;
+        String ingredients = meal.getIngredients().toLowerCase();
+        
+        for (String restriction : patient.getRestriction()) {
+            if (ingredients.contains(restriction.toLowerCase())) {
+                return true; // Conflict found
+            }
+        }
+        for (String allergy : patient.getAllergies()) {
+            if (ingredients.contains(allergy.toLowerCase())) {
+                return true; // Conflict found
+            }
+        }
+        return false; // No conflicts
     }
 
     public Optional<Patient> findById(Long patientID) {

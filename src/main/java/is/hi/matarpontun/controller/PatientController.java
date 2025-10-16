@@ -1,6 +1,7 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.dto.RestrictionUpdateResultDTO;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.service.PatientService;
@@ -70,6 +71,20 @@ public class PatientController {
         String restriction = request.get("restriction");
         Patient updated = patientService.addRestriction(id, restriction);
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
+    }
+
+    @PostMapping("/{id}/restrictions/addAndReassign")
+    public ResponseEntity<RestrictionUpdateResultDTO> addRestrictionAndReassign(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        String restriction = request.get("restriction");
+        if (restriction == null || restriction.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        RestrictionUpdateResultDTO result = patientService.addRestrictionAndReassignFoodType(id, restriction);
+        return ResponseEntity.ok(result);
     }
 
     //Remove one or more restrictions
