@@ -134,5 +134,6 @@ public class Patient {
     public void setAllergies(List<String> allergies) {
         this.allergies = allergies;
     }
+
 }
 

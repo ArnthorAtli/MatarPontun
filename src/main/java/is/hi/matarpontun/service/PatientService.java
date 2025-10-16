@@ -1,10 +1,19 @@
 package is.hi.matarpontun.service;
 
+import is.hi.matarpontun.dto.MenuOfTheDayDTO;
+import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.model.Meal;
+import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.repository.MealRepository;
+import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
+import is.hi.matarpontun.util.MealPeriod;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -12,9 +21,11 @@ import java.util.Optional;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final MenuRepository menuRepository;
 
-    public PatientService(PatientRepository patientRepository) {
+    public PatientService(PatientRepository patientRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
+        this.menuRepository = menuRepository;
     }
 
     public Optional<Patient> findById(Long patientID) {
@@ -90,4 +101,47 @@ public class PatientService {
         patient.getAllergies().clear();
         return patientRepository.save(patient);
     }
+
+    public PatientMealDTO mapToPatientMealDTO(Patient patient) {
+        var foodType = patient.getFoodType();
+
+        Menu menu = null;
+        if (foodType != null) {
+            menu = menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null);
+        }
+
+        Meal nextMeal = null;
+        if (menu != null) {
+            MealPeriod period = MealPeriod.current(LocalTime.now());
+            nextMeal = period.getMealFromMenu(menu);
+        }
+
+        MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
+
+        return new PatientMealDTO(
+                patient.getPatientID(),
+                patient.getName(),
+                patient.getAge(),
+                patient.getRoom().getRoomNumber(),
+                patient.getBedNumber(),
+                (foodType != null) ? foodType.getTypeName() : null,
+                nextMeal,
+                menuDTO,
+                patient.getRestriction(),
+                patient.getAllergies()
+        );
+    }
+
+    private MenuOfTheDayDTO mapToMenuOfTheDayDTO(Menu menu) {
+        return new MenuOfTheDayDTO(
+                menu.getDate(),
+                menu.getBreakfast() != null ? menu.getBreakfast().getName() : null,
+                menu.getLunch() != null ? menu.getLunch().getName() : null,
+                menu.getAfternoonSnack() != null ? menu.getAfternoonSnack().getName() : null,
+                menu.getDinner() != null ? menu.getDinner().getName() : null,
+                menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
+        );
+    }
 }
+
+

@@ -3,17 +3,11 @@ package is.hi.matarpontun.service;
 import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardFullDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
-import is.hi.matarpontun.model.Meal;
-import is.hi.matarpontun.model.Menu;
-import is.hi.matarpontun.model.Patient;
-import is.hi.matarpontun.model.Ward;
-import is.hi.matarpontun.repository.MenuRepository;
-import is.hi.matarpontun.repository.WardRepository;
+import is.hi.matarpontun.model.*;
+import is.hi.matarpontun.repository.*;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,11 +15,13 @@ import java.util.Optional;
 public class WardService {
 
     private final WardRepository wardRepository;
-    private final MenuRepository menuRepository;
+    private final MealOrderService mealOrderService;
+    private final PatientService patientService;
 
-    public WardService(WardRepository wardRepository, MenuRepository menuRepository) {
+    public WardService(WardRepository wardRepository, MealOrderService mealOrderService, PatientService patientService) {
         this.wardRepository = wardRepository;
-        this.menuRepository = menuRepository;
+        this.mealOrderService = mealOrderService;
+        this.patientService = patientService;
     }
 
     public Ward createWard(Ward ward) {
@@ -54,9 +50,10 @@ public class WardService {
                 .flatMap(ward -> ward.getPatients().stream()
                         .filter(p -> p.getPatientID().equals(patientId))
                         .findFirst()
-                        .map(this::mapToPatientMealDTO));
+                        .map(patientService::mapToPatientMealDTO));
     }
 
+    // UC6: update ward
     public Ward updateWard(Long id, WardUpdateDTO req) {
         Ward ward = wardRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found"));
@@ -77,57 +74,26 @@ public class WardService {
         ward.setPassword(req.password());
         return wardRepository.save(ward);
     }
-    // --------------------- private helpers ---------------------
 
+    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this ward
+    public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
+        Ward ward = wardRepository.findById(wardId)
+                .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
+        // Persist orders internally (system logs and kitchen)
+        mealOrderService.generateOrdersForPatients(ward.getPatients());
+
+        // Return clean DTOs for ward staff review
+        return ward.getPatients().stream()
+                .map(patientService::mapToPatientMealDTO)
+                .toList();
+    }
+
+    // --------------------- Private Helpers ---------------------
     private WardFullDTO mapToWardFullDTO(Ward ward) {
         var patientDTOs = ward.getPatients().stream()
-                .map(this::mapToPatientMealDTO)
+                .map(patientService::mapToPatientMealDTO)
                 .toList();
 
         return new WardFullDTO(ward.getWardName(), patientDTOs);
-    }
-
-    private PatientMealDTO mapToPatientMealDTO(Patient patient) {
-        var foodType = patient.getFoodType();
-
-        // Fetch today’s menu for this patient’s food type
-        Menu menu = null;
-        if (foodType != null) {
-            menu = menuRepository
-                    .findByFoodTypeAndDate(foodType, LocalDate.now())
-                    .orElse(null);
-        }
-
-        Meal nextMeal = (menu != null) ? getNextMeal(menu) : null;
-
-        return new PatientMealDTO(
-                patient.getPatientID(),
-                patient.getName(),
-                patient.getAge(),
-                patient.getBedNumber(),
-                (foodType != null) ? foodType.getTypeName() : null,
-                nextMeal,
-                menu,
-                patient.getRestriction(),
-                patient.getAllergies()
-        );
-    }
-
-    private Meal getNextMeal(Menu menu) {
-        var now = LocalTime.now();
-
-        if (now.isBefore(LocalTime.of(9, 0))) {
-            return menu.getBreakfast();
-        } else if (now.isBefore(LocalTime.of(12, 0))) {
-            return menu.getLunch();
-        } else if (now.isBefore(LocalTime.of(15, 0))) {
-            return menu.getAfternoonSnack();
-        } else if (now.isBefore(LocalTime.of(19, 0))) {
-            return menu.getDinner();
-        } else if (now.isBefore(LocalTime.of(22, 0))) {
-            return menu.getNightSnack();
-        } else {
-            return menu.getBreakfast(); // after 22:00 → assume next day breakfast
-        }
     }
 }
