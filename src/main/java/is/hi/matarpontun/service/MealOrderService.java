@@ -1,13 +1,17 @@
 package is.hi.matarpontun.service;
 
+import is.hi.matarpontun.model.FoodType;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MealOrderRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
 import is.hi.matarpontun.util.MealPeriod;
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -23,11 +27,13 @@ public class MealOrderService {
     private final MealOrderRepository mealOrderRepository;
     private final PatientRepository patientRepository;
     private final MenuRepository menuRepository;
+    private final FoodTypeRepository foodTypeRepository;
 
-    public MealOrderService(MealOrderRepository mealOrderRepository, PatientRepository patientRepository, MenuRepository menuRepository) {
+    public MealOrderService(MealOrderRepository mealOrderRepository, PatientRepository patientRepository, MenuRepository menuRepository, FoodTypeRepository foodTypeRepository) {
         this.mealOrderRepository = mealOrderRepository;
         this.patientRepository = patientRepository;
         this.menuRepository = menuRepository;
+        this.foodTypeRepository = foodTypeRepository;
     }
 
     /**
@@ -73,5 +79,45 @@ public class MealOrderService {
         List<Patient> allPatients = patientRepository.findAll();
         generateOrdersForPatients(allPatients);
         System.out.println("Automatically generated orders for all wards");
+    }
+
+    //UC3 - Manually change the next meal's food type for a patient
+    public String manuallyChangeNextMeal(Long patientId, String newFoodTypeName) {
+        // Step 1: Find the patient and the new food type.
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient with ID " + patientId + " not found."));
+        FoodType newFoodType = foodTypeRepository.findByTypeName(newFoodTypeName)
+                .orElseThrow(() -> new EntityNotFoundException("FoodType '" + newFoodTypeName + "' not found."));
+
+        // Step 2: Determine the current meal period.
+        MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());
+        String currentMealType = currentPeriod.getMealCategory();
+
+        // Step 3: Try to find an existing pending order.
+        var nextOrderOpt = mealOrderRepository.findNextPendingOrder(patient, "PENDING", currentMealType);
+
+        // SCENARIO A: A pending order was found. Update it directly.
+        if (nextOrderOpt.isPresent()) {
+            MealOrder orderToUpdate = nextOrderOpt.get();
+            Menu newMenu = menuRepository.findByFoodTypeAndDate(newFoodType, LocalDate.now())
+                    .orElseThrow(() -> new EntityNotFoundException("No menu found for food type '" + newFoodTypeName + "' for today."));
+            Meal newMeal = currentPeriod.getMealFromMenu(newMenu);
+            if (newMeal == null) {
+                throw new RuntimeException("No '" + currentMealType + "' meal is available in the menu for food type '" + newFoodTypeName + "'.");
+            }
+
+            orderToUpdate.setFoodType(newFoodType);
+            orderToUpdate.setMeal(newMeal);
+            orderToUpdate.setStatus("MANUALLY_CHANGED");
+            mealOrderRepository.save(orderToUpdate);
+            return "Successfully updated existing order #" + orderToUpdate.getId() + " to food type '" + newFoodTypeName + "'.";
+        }
+        
+        // SCENARIO B: No pending order was found. Update the patient's default diet instead.
+        else {
+            patient.setFoodType(newFoodType);
+            patientRepository.save(patient);
+            return "No pending order found. Updated patient's default diet to '" + newFoodTypeName + "'.";
+        }
     }
 }

@@ -8,7 +8,6 @@ import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.repository.FoodTypeRepository;
-import is.hi.matarpontun.repository.MealRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
 import is.hi.matarpontun.util.MealPeriod;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
