@@ -3,7 +3,6 @@ package is.hi.matarpontun.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
-import java.time.LocalTime;
 
 @Entity
 @Table(name = "meals")

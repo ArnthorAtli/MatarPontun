@@ -1,11 +1,14 @@
 package is.hi.matarpontun.controller;
 
+import is.hi.matarpontun.dto.ManualFoodTypeChangeDTO;
 import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.dto.RestrictionUpdateResultDTO;
 import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.service.MealOrderService;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,12 +20,13 @@ public class PatientController {
 
     private final WardService wardService;
     private final PatientService patientService;
+    private final MealOrderService mealOrderService;
 
     // depends á WardService því viljum að aðeins logged-in wards geti nálgast uppls.
-    @Autowired
-    public PatientController(WardService wardService, PatientService patientService) {
+    public PatientController(WardService wardService, PatientService patientService, MealOrderService mealOrderService) {
         this.wardService = wardService;
         this.patientService = patientService;
+        this.mealOrderService = mealOrderService;
     }
 
     // UC8 - to fetch patients for a ward
@@ -72,6 +76,20 @@ public class PatientController {
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
+    @PostMapping("/{id}/restrictions/addAndReassign")
+    public ResponseEntity<RestrictionUpdateResultDTO> addRestrictionAndReassign(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        String restriction = request.get("restriction");
+        if (restriction == null || restriction.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        RestrictionUpdateResultDTO result = patientService.addRestrictionAndReassignFoodType(id, restriction);
+        return ResponseEntity.ok(result);
+    }
+
     //Remove one or more restrictions
     //Body: { "remove": ["no sugar", "no dairy"] }
     @PatchMapping("/{id}/restrictions/remove")
@@ -119,6 +137,19 @@ public class PatientController {
     public ResponseEntity<PatientMealDTO> clearAllAllergies(@PathVariable Long id) {
         Patient updated = patientService.clearAllAllergies(id);
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
+    }
+
+    //UC3 - Manually change the next meal's food type for a patient
+   @PatchMapping("/{id}/change-next-meal")
+    public ResponseEntity<?> changeNextMeal(
+            @PathVariable("id") Long patientId,
+            @RequestBody ManualFoodTypeChangeDTO request) {
+        
+        // Call the service method to perform the logic
+        String successMessage = mealOrderService.manuallyChangeNextMeal(patientId, request.newFoodTypeName());
+        
+        // Return the success message from the service in a simple JSON object
+        return ResponseEntity.ok(Map.of("message", successMessage));
     }
 }
 
