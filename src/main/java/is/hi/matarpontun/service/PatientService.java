@@ -25,12 +25,13 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
     private final MenuRepository menuRepository;
+    private final KitchenService kitchenService;
 
    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
-    }
+        }
 
     // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
     public RestrictionUpdateResultDTO addRestrictionAndReassignFoodType(Long patientId, String restriction) {
@@ -77,7 +78,7 @@ public class PatientService {
                 if (potentialMeal != null && !checkMealForConflicts(potentialMeal, patient)) {
                     // Alternative found! Update the patient's diet.
                     patient.setFoodType(potentialFoodType);
-                    patientRepository.save(patient);
+        patientRepository.save(patient);
 
                     return new RestrictionUpdateResultDTO(
                         "Conflict detected! Patient has been successfully reassigned to a new diet.",
@@ -203,7 +204,7 @@ public class PatientService {
         if (menu != null) {
             MealPeriod period = MealPeriod.current(LocalTime.now());
             nextMeal = period.getMealFromMenu(menu);
-        }
+    }
 
         MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
 
@@ -231,6 +232,13 @@ public class PatientService {
                 menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
         );
     }
+
+    // UC 1:
+    // finnur sjúkling og skilar food type
+    public boolean OrderFood(Long patientId, String foodType) {
+        Patient patient = patientRepository.findById(patientId).orElse(null);
+        if (patient == null) return false;
+
 }
 
 

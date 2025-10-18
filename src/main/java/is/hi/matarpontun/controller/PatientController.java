@@ -151,6 +151,22 @@ public class PatientController {
         // Return the success message from the service in a simple JSON object
         return ResponseEntity.ok(Map.of("message", successMessage));
     }
+
+    // UC1: order food type
+    @PostMapping("{id}/order")
+    public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id,
+                                                 @RequestBody Map<String, String> body) {
+        String foodType = body.get("foodType");
+        if (foodType == null || foodType.isBlank()) {
+            return ResponseEntity.badRequest().body("Missing foodType");
+        }
+
+        boolean ok = patientService.OrderFood(id, foodType);
+        if (ok) return ResponseEntity.ok().build();
+        return ResponseEntity.badRequest().body("Order failed");
+    }
+
+
 }
 
 
