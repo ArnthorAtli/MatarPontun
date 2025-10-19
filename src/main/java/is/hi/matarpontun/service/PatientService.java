@@ -27,10 +27,11 @@ public class PatientService {
     private final MenuRepository menuRepository;
     private final KitchenService kitchenService;
 
-   public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
+   public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository, KitchenService kitchenService) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
+       this.kitchenService = kitchenService;
         }
 
     // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
@@ -42,6 +43,7 @@ public class PatientService {
         if (restriction != null && !restriction.isBlank() && !patient.getRestriction().contains(restriction)) {
             patient.getRestriction().add(restriction);
         }
+
 
         // Step 2: Determine the patient's next scheduled meal based on their current diet.
         MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());
@@ -234,11 +236,20 @@ public class PatientService {
     }
 
     // UC 1:
-    // finnur sjúkling og skilar food type
-    public boolean OrderFood(Long patientId, String foodType) {
+    public boolean orderFood(Long patientId, String foodType) {
+        if (patientId == null || foodType == null || foodType.isBlank()) return false;
+
         Patient patient = patientRepository.findById(patientId).orElse(null);
         if (patient == null) return false;
 
+        FoodType chosen = foodTypeRepository.findByTypeNameIgnoreCase(foodType).orElse(null);
+        if (chosen == null) return false;
+
+        patient.setFoodType(chosen);
+        patientRepository.save(patient);
+
+        return true;
+    }
 }
 
 
