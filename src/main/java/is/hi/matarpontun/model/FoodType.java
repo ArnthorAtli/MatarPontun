@@ -1,6 +1,8 @@
 package is.hi.matarpontun.model;
 
 import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -16,7 +18,7 @@ public class FoodType {
 
     // One food type can have many menus (e.g. one per day)
     @OneToMany(mappedBy = "foodType", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Meal> meals;
+    private List<Menu> menus = new ArrayList<Menu>();
 
     // To link a food type to a menu of the day
     @OneToOne
@@ -37,11 +39,11 @@ public class FoodType {
     public String getTypeName() { return typeName; }
     public void setTypeName(String typeName) { this.typeName = typeName; }
 
-    public List<Meal> getMeals() { return meals; }
-    public void setMeals(List<Meal> meals) { this.meals = meals; }
-
     public Menu getMenuOfTheDay() { return menuOfTheDay; }
     public void setMenuOfTheDay(Menu menuOfTheDay) { this.menuOfTheDay = menuOfTheDay; }
+
+    public List<Menu> getMenus() { return menus; }
+    public void setMenus(List<Menu> menus) { this.menus = menus; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
