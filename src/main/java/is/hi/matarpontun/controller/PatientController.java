@@ -34,6 +34,12 @@ public class PatientController {
     // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
     // The only difference is: instead of @RequestParam wardName/password,
     // we will look up the ward based on the token in the Authorization header.
+    /**
+     * UC8 – Retrieves all patients for a specific ward.
+     *
+     * @param request contains the ward name and password for authentication
+     * @return a list of patients for the ward if credentials are valid
+     */
     @GetMapping("/all")
     public ResponseEntity<?> getAllPatientsForWard(@RequestBody WardDTO request) {
         var wardOpt =  wardService.signInAndGetData(request.wardName(), request.password());
@@ -154,19 +160,25 @@ public class PatientController {
 
     // UC1: order food type
     @PostMapping("{id}/order")
-    public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id,
-                                                 @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String foodType = body.get("foodType");
         if (foodType == null || foodType.isBlank()) {
             return ResponseEntity.badRequest().body("Missing foodType");
         }
 
-        boolean ok = patientService.OrderFood(id, foodType);
-        if (ok) return ResponseEntity.ok().build();
+        boolean ok = patientService.orderFood(id, foodType);
+        if (ok) {
+            return ResponseEntity.ok(
+                    java.util.Map.of(
+                            "message", "Order has been made",
+                            "patientId", id,
+                            "foodType", body.get("foodType")
+                    )
+            );
+        }
+
         return ResponseEntity.badRequest().body("Order failed");
     }
-
-
 }
 
 
