@@ -2,6 +2,7 @@ package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.dto.WardSummaryDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
@@ -89,5 +90,15 @@ public class WardController {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
+    }
+
+    @PostMapping("/summary")
+    public ResponseEntity<?> getWardSummary(@RequestBody WardDTO request) {
+        try {
+            WardSummaryDTO dto = wardService.getWardSummaryByCredentials(request.wardName(), request.password());
+            return ResponseEntity.ok(dto);
+        } catch (jakarta.persistence.EntityNotFoundException ex) {
+            return ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password"));
+        }
     }
 }

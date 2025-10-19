@@ -7,6 +7,8 @@ import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.*;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
+import is.hi.matarpontun.dto.WardSummaryDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,11 +19,19 @@ public class WardService {
     private final WardRepository wardRepository;
     private final MealOrderService mealOrderService;
     private final PatientService patientService;
+    private final RoomRepository roomRepository;
+    private final PatientRepository patientRepository;
 
-    public WardService(WardRepository wardRepository, MealOrderService mealOrderService, PatientService patientService) {
+    public WardService(WardRepository wardRepository,
+                       MealOrderService mealOrderService,
+                       PatientService patientService,
+                       RoomRepository roomRepository,
+                       PatientRepository patientRepository) {
         this.wardRepository = wardRepository;
         this.mealOrderService = mealOrderService;
         this.patientService = patientService;
+        this.roomRepository = roomRepository;
+        this.patientRepository = patientRepository;
     }
 
     public Ward createWard(Ward ward) {
@@ -86,6 +96,18 @@ public class WardService {
         return ward.getPatients().stream()
                 .map(patientService::mapToPatientMealDTO)
                 .toList();
+    }
+
+    //UC16
+    @Transactional(readOnly = true)
+    public WardSummaryDTO getWardSummaryByCredentials(String wardName, String password) {
+        var ward = wardRepository.findByWardNameAndPassword(wardName, password)
+                .orElseThrow(() -> new EntityNotFoundException("Invalid ward name or password"));
+
+        int rooms = (int) roomRepository.countByWard_Id(ward.getId());
+        int patients = (int) patientRepository.countByWard_Id(ward.getId());
+
+        return new WardSummaryDTO(ward.getId(), ward.getWardName(), rooms, patients);
     }
 
     // --------------------- Private Helpers ---------------------
