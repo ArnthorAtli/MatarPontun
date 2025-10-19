@@ -92,26 +92,14 @@ public class WardController {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 
-    @PostMapping("/summary")
-    public ResponseEntity<?> getWardSummary(@RequestBody WardDTO request) {
+    // UC16 – Fetch summary for a single ward (GET)
+    @GetMapping("/summary/{wardId}")
+    public ResponseEntity<?> getWardSummary(@PathVariable Long wardId) {
         try {
-            WardSummaryDTO dto = wardService.getWardSummaryByCredentials(request.wardName(), request.password());
+            WardSummaryDTO dto = wardService.getWardSummaryById(wardId);
             return ResponseEntity.ok(dto);
         } catch (jakarta.persistence.EntityNotFoundException ex) {
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password"));
-        }
-    }
-
-    @GetMapping("/summary")
-    public ResponseEntity<?> getWardSummary(
-            @RequestParam String wardName,
-            @RequestParam String password) {
-        try {
-            WardSummaryDTO dto = wardService.getWardSummaryByCredentials(wardName, password);
-            return ResponseEntity.ok(dto);
-        } catch (jakarta.persistence.EntityNotFoundException ex) {
-            return ResponseEntity.status(401)
-                    .body(Map.of("error", "Invalid ward name or password"));
+            return ResponseEntity.status(404).body(Map.of("error", "Ward not found"));
         }
     }
 }
