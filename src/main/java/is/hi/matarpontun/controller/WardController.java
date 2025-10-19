@@ -25,13 +25,22 @@ public class WardController {
         this.wardService = wardService;
     }
 
-    // default viðmót - skilar Map
+    /**
+     * Default welcome.
+     *
+     * @return a welcome message
+     */
     @GetMapping
     public ResponseEntity<?> welcome() {
         return ResponseEntity.ok(Map.of("message", "Welcome to the Hospital Meal Ordering System!"));
     }
 
-    // UC4 - create ward account
+    /**
+     * UC4 – Creates a new ward account.
+     +
+     * @param request the ward registration information: name and password
+     * @return the created ward containing the new ward's ID and name
+     */
     @PostMapping
     public ResponseEntity<WardDTO> createWard(@RequestBody WardDTO request) {
         Ward savedWard = wardService.createWard(new Ward(request.wardName(), request.password()));
@@ -39,6 +48,12 @@ public class WardController {
     }
 
     // UC5 - sign inn, skilar bara success eða error (Boolean), bæta við tokan seinna
+    /**
+     * UC5 – Signs in a ward by validating credentials.
+     *
+     * @param request contains the ward name and password
+     * @return message if login was successful or not
+     */
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@RequestBody WardDTO request) {
         return wardService.signInAndGetData(request.wardName(), request.password())

@@ -52,7 +52,13 @@ public class PatientController {
         }
     }
 
-    // UC9: fetch single patient by ID
+    /**
+     * UC9 – Retrieves details for a single patient by patient id.
+     *
+     * @param request the ward authentication details
+     * @param id      the patient ID
+     * @return the patient data if found and authorized
+     */
     @GetMapping("{id}")
     public ResponseEntity<?> getPatientByIdForWard(@RequestBody WardDTO request,
                                                    @PathVariable Long id) {
@@ -67,10 +73,11 @@ public class PatientController {
     }
 
     /**
-     * UC12 – Add a single restriction string to the patient's restriction list.
-     * Example request:
-     *   POST /patients/3/restrictions/add
-     *   { "restriction": "no sugar" }
+     * UC12 – Adds a restriction to a patient's restriction list.
+     *
+     * @param id       the patient's ID
+     * @param request  contains the restriction string that should be added
+     * @return updated patient meal information
      */
     @PostMapping("/{id}/restrictions/add")
     public ResponseEntity<PatientMealDTO> addRestriction(
@@ -82,6 +89,13 @@ public class PatientController {
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
+    /**
+     * Adds a restriction and reassigns the patient's food type if a conflict arises.
+     *
+     * @param id       the patient's ID
+     * @param request  contains the restriction that should be added
+     * @return a result DTO describing whether a reassignment was needed
+     */
     @PostMapping("/{id}/restrictions/addAndReassign")
     public ResponseEntity<RestrictionUpdateResultDTO> addRestrictionAndReassign(
             @PathVariable Long id,
@@ -96,8 +110,13 @@ public class PatientController {
         return ResponseEntity.ok(result);
     }
 
-    //Remove one or more restrictions
-    //Body: { "remove": ["no sugar", "no dairy"] }
+    /**
+     * Removes one or more restrictions from a patient.
+     *
+     * @param id    the patient's ID
+     * @param body  contains a list of restrictions to remove
+     * @return updated patient meal information
+     */
     @PatchMapping("/{id}/restrictions/remove")
     public ResponseEntity<PatientMealDTO> removeRestrictions(
             @PathVariable Long id,
@@ -108,14 +127,25 @@ public class PatientController {
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
-    //Remove all restrictions
+    /**
+     * Removes all restrictions from a patient.
+     *
+     * @param id the patient's ID
+     * @return updated patient meal information
+     */
     @DeleteMapping("/{id}/restrictions")
     public ResponseEntity<PatientMealDTO> clearAllRestrictions(@PathVariable Long id) {
         Patient updated = patientService.clearAllRestrictions(id);
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
-    // Add an allergy to a patient
+    /**
+     * Adds an allergy to a patient's allergy list.
+     *
+     * @param id       the patient's ID
+     * @param request  contains the allergy string that should be added
+     * @return updated patient meal information
+     */
     @PostMapping("/{id}/allergies/add")
     public ResponseEntity<PatientMealDTO> addAllergy(
             @PathVariable Long id,
@@ -126,8 +156,13 @@ public class PatientController {
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
-    //Remove one or more allergy
-    //Body: { "remove": ["no sugar", "no dairy"] }
+    /**
+     * Removes one or more allergies from a patient's allergy list.
+     *
+     * @param id    the patient's ID
+     * @param body  contains a list of allergies that should be removed
+     * @return updated patient meal information
+     */
     @PatchMapping("/{id}/allergies/remove")
     public ResponseEntity<PatientMealDTO> removeAllergy(
             @PathVariable Long id,
@@ -138,27 +173,44 @@ public class PatientController {
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
-    //Remove all restrictions
+    /**
+     * Removes all allergies from a patient's restriction list.
+     *
+     * @param id the patient's ID
+     * @return updated patient meal information
+     */
     @DeleteMapping("/{id}/allergies")
     public ResponseEntity<PatientMealDTO> clearAllAllergies(@PathVariable Long id) {
         Patient updated = patientService.clearAllAllergies(id);
         return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
-    //UC3 - Manually change the next meal's food type for a patient
+    /**
+     * UC3 – Manually changes the next meal's food type for a patient.
+     *
+     * @param patientId the patient's ID
+     * @param request   contains the new food type
+     * @return a confirmation message
+     */
    @PatchMapping("/{id}/change-next-meal")
     public ResponseEntity<?> changeNextMeal(
             @PathVariable("id") Long patientId,
             @RequestBody ManualFoodTypeChangeDTO request) {
-        
+
         // Call the service method to perform the logic
         String successMessage = mealOrderService.manuallyChangeNextMeal(patientId, request.newFoodTypeName());
-        
         // Return the success message from the service in a simple JSON object
         return ResponseEntity.ok(Map.of("message", successMessage));
     }
 
-    // UC1: order food type
+    /**
+     * UC1 – Orders a specific food type for a patient.
+     *
+     * @param id    the patient's ID
+     * @param body  contains the chosen food type name
+     * @return a success message if the order was made, the
+     * patient's ID and the food type, otherwise an error message
+     */
     @PostMapping("{id}/order")
     public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String foodType = body.get("foodType");
