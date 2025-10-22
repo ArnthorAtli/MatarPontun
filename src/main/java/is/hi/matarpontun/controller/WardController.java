@@ -61,12 +61,6 @@ public class WardController {
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
     }
 
-    // (Admin/debug helper only)
-    @GetMapping("/all-data")
-    public List<Ward> getAllData() {
-        return wardService.findAllWards();
-    }
-
     // UC6 – Modify account information
     @PutMapping("/{id}")
     public ResponseEntity<WardDTO> updateWard(

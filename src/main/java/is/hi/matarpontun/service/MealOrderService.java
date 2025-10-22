@@ -48,7 +48,7 @@ public class MealOrderService {
             throw new IllegalStateException("Patient has no assigned food type");
         }
 
-        // ✅ Restrict ordering to the patient's assigned food type only
+        // Restrict ordering to the patient's assigned food type only
         if (!assigned.getTypeName().equalsIgnoreCase(foodTypeName)) {
             throw new IllegalArgumentException(
                     "Patient " + patient.getName() +
@@ -118,41 +118,50 @@ public class MealOrderService {
 
     //UC3 - Manually change the next meal's food type for a patient
     public String manuallyChangeNextMeal(Long patientId, String newFoodTypeName) {
-        // Step 1: Find the patient and the new food type.
         Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient with ID " + patientId + " not found."));
-        FoodType newFoodType = foodTypeRepository.findByTypeName(newFoodTypeName)
-                .orElseThrow(() -> new EntityNotFoundException("FoodType '" + newFoodTypeName + "' not found."));
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
 
-        // Step 2: Determine the current meal period.
+        FoodType newFoodType = foodTypeRepository.findByTypeNameIgnoreCase(newFoodTypeName)
+                .orElseThrow(() -> new EntityNotFoundException("FoodType not found"));
+
         MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());
         String currentMealType = currentPeriod.getMealCategory();
 
-        // Step 3: Try to find an existing pending order.
-        var nextOrderOpt = mealOrderRepository.findNextPendingOrder(patient, "PENDING", currentMealType);
+        // Try to find a pending order for the current period
+        var nextOrderOpt = mealOrderRepository
+                .findFirstByPatientAndStatusAndMealTypeOrderByOrderTimeDesc(patient, "PENDING", currentMealType);
 
-        // SCENARIO A: A pending order was found. Update it directly.
         if (nextOrderOpt.isPresent()) {
             MealOrder orderToUpdate = nextOrderOpt.get();
+
+            // ✅ Replace with new foodType using the shared helper for consistency
             Menu newMenu = menuRepository.findByFoodTypeAndDate(newFoodType, LocalDate.now())
-                    .orElseThrow(() -> new EntityNotFoundException("No menu found for food type '" + newFoodTypeName + "' for today."));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "No menu found for " + newFoodTypeName + " today"));
+
             Meal newMeal = currentPeriod.getMealFromMenu(newMenu);
             if (newMeal == null) {
-                throw new RuntimeException("No '" + currentMealType + "' meal is available in the menu for food type '" + newFoodTypeName + "'.");
+                throw new RuntimeException("No '" + currentMealType + "' meal available for " + newFoodTypeName);
             }
 
             orderToUpdate.setFoodType(newFoodType);
             orderToUpdate.setMeal(newMeal);
             orderToUpdate.setStatus("MANUALLY_CHANGED");
             mealOrderRepository.save(orderToUpdate);
-            return "Successfully updated existing order #" + orderToUpdate.getId() + " to food type '" + newFoodTypeName + "'.";
+
+            return "Updated existing order #" + orderToUpdate.getId() +
+                    " to food type '" + newFoodTypeName + "'.";
         }
-        
-        // SCENARIO B: No pending order was found. Update the patient's default diet instead.
-        else {
-            patient.setFoodType(newFoodType);
-            patientRepository.save(patient);
-            return "No pending order found. Updated patient's default diet to '" + newFoodTypeName + "'.";
+
+        // No pending order found → create a new order instead
+        MealOrder newOrder = createAndSaveOrder(patient, newFoodType, "MANUALLY_CREATED");
+        if (newOrder != null) {
+            return "No pending order found. Created new order for '" + newFoodTypeName + "'.";
         }
+
+        // As a fallback, just update the patient’s default type
+        patient.setFoodType(newFoodType);
+        patientRepository.save(patient);
+        return "No pending order found. Updated patient's default food type to '" + newFoodTypeName + "'.";
     }
 }

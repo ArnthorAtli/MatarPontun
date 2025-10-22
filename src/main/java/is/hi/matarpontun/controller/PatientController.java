@@ -72,7 +72,7 @@ public class PatientController {
     }
 
     /**
-     * Adds a restriction and reassigns the patient's food type if a conflict arises.
+     * UC3 - Adds a restriction and reassigns the patient's food type if a conflict arises.
      *
      * @param id       the patient's ID
      * @param request  contains the restriction that should be added
@@ -138,7 +138,7 @@ public class PatientController {
     }
 
     /**
-     * Adds an allergy to a patient's allergy list.
+     * UC 3 - Adds an allergy to a patient's allergy list and reasings the diet for one spesifc meal if conflict.
      *
      * @param id       the patient's ID
      * @param request  contains the allergy string that should be added
@@ -184,7 +184,7 @@ public class PatientController {
     }
 
     /**
-     * UC3 – Manually changes the next meal's food type for a patient.
+     * Manually changes the next meal's food type for a patient.
      *
      * @param patientId the patient's ID
      * @param request   contains the new food type
