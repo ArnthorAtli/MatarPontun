@@ -25,14 +25,12 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
     private final MenuRepository menuRepository;
-    //private final KitchenService kitchenService;
 
 
-    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository /*, KitchenService kitchenService*/) {
+    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
-        //this.kitchenService = kitchenService;
     }
 
     // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
