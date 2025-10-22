@@ -112,7 +112,7 @@ public class WardService {
 
     // --------------------- Private Helpers ---------------------
     private WardFullDTO mapToWardFullDTO(Ward ward) {
-        var patientDTOs = ward.getPatients().stream()
+        var patientDTOs = ward.getPatients().stream()// held að stream fari í gegnum alla
                 .map(patientService::mapToPatientMealDTO)
                 .toList();
 

@@ -40,30 +40,31 @@ public class MealOrderService {
      * UC2 - Generate Meal Orders for a list of patients (used manually or automatically)
      * This will be sent to the kitchen i think
      */
+    // upphafstillum tímann -SKOÐA!!
     public List<MealOrder> generateOrdersForPatients(List<Patient> patients) {
         LocalDateTime now = LocalDateTime.now();
         LocalDate today = LocalDate.now();
 
         List<MealOrder> createdOrders = new ArrayList<>();
 
+        // held ég vilji hér kalla á aðferðina
         for (Patient patient : patients) {
-            if (patient.getFoodType() == null) continue;
-
             var foodType = patient.getFoodType();
-            Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
-            if (menu == null) continue;
+            if (foodType == null) continue; // ef ekki skráð FoodType -> ekkert gert
+
+            Menu menuOfTheDay = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null); // á að skila matseðli dagsins fyrir FoodType
+            if (menuOfTheDay == null) continue;
 
             // Use the shared enum logic
-            MealPeriod period = MealPeriod.current(LocalTime.now());
-            Meal meal = period.getMealFromMenu(menu);
-            if (meal == null) continue;
+            Meal nextMeal = MealPeriod.current(LocalTime.now()).getMealFromMenu(menuOfTheDay); // náum í næstu máltíð
+            if (nextMeal == null) continue;
 
             MealOrder order = new MealOrder();
-            order.setOrderTime(now);
-            order.setMealType(meal.getCategory());
-            order.setMeal(meal);
+            order.setOrderTime(now); // pöntunartími
+            order.setMealType(nextMeal.getCategory());
+            order.setMeal(nextMeal);
             order.setPatient(patient);
-            order.setMenu(menu);
+            order.setMenu(menuOfTheDay);
             order.setFoodType(foodType);
             order.setStatus("PENDING");
 
@@ -75,7 +76,7 @@ public class MealOrderService {
 
     // þetta keyrir sjálfkrafa á sceduled tímum - SKOÐA TÍMA hvenær eldhúið vill fá miðana
     @Scheduled(cron = "0 0 0,10,13,17,21 * * *")
-    public void generateMealOrdersForAllPatients() {
+    public void generateMealOrdersForAllPatients() { // aldrei kallað á
         List<Patient> allPatients = patientRepository.findAll();
         generateOrdersForPatients(allPatients);
         System.out.println("Automatically generated orders for all wards");
@@ -120,4 +121,41 @@ public class MealOrderService {
             return "No pending order found. Updated patient's default diet to '" + newFoodTypeName + "'.";
         }
     }
+    /* // til að eiga óbreytta aðferð:
+    public List<MealOrder> generateOrdersForPatients(List<Patient> patients) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = LocalDate.now();
+
+        List<MealOrder> createdOrders = new ArrayList<>();
+
+        // held ég vilji hér kalla á aðferðina
+        for (Patient patient : patients) {
+            if (patient.getFoodType() == null) continue; // ef ekki skráð FoodType -> ekkert gert
+
+            var foodType = patient.getFoodType();
+
+            Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
+            if (menu == null) continue;
+
+            // Use the shared enum logic
+            MealPeriod period = MealPeriod.current(LocalTime.now());
+            Meal meal = period.getMealFromMenu(menu);
+            if (meal == null) continue;
+
+            MealOrder order = new MealOrder();
+            order.setOrderTime(now);
+            order.setMealType(meal.getCategory());
+            order.setMeal(meal);
+            order.setPatient(patient);
+            order.setMenu(menu);
+            order.setFoodType(foodType);
+            order.setStatus("PENDING");
+
+            mealOrderRepository.save(order);
+            createdOrders.add(order);
+        }
+        return createdOrders;
+    }
+
+     */
 }

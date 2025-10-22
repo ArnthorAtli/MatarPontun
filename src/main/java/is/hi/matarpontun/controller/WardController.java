@@ -62,10 +62,10 @@ public class WardController {
         return ResponseEntity.ok(new WardDTO(updated.getId(), updated.getWardName(), null));
     }
 
-    //UC2 - Order meal at mealtime
-    @GetMapping("/{wardId}/order")
-    public ResponseEntity<?> orderMealsForWard(@PathVariable Long wardId) {
-        List<PatientMealDTO> patients = wardService.generateMealOrdersForWard(wardId);
+    //UC2 - Order meal at mealtime, vil ekki telja ef ekkert pantað fyrir sjúklinginn?
+    @GetMapping("/{id}/order")
+    public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
+        List<PatientMealDTO> patients = wardService.generateMealOrdersForWard(id); // hér fer pöntunin fram
 
         if (patients.isEmpty()) {
             return ResponseEntity.ok(Map.of(
@@ -73,7 +73,7 @@ public class WardController {
             ));
         }
 
-        Map<String, Object> response = new LinkedHashMap<>(); // preserves key order
+        Map<String, Object> response = new LinkedHashMap<>(); // skilar útkomunni í ákveðni röð
         response.put("message", "Meal orders successfully created and logged.");
         response.put("totalPatients", patients.size());
         response.put("patients", patients);
@@ -90,15 +90,5 @@ public class WardController {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
-    }
-
-    @PostMapping("/summary")
-    public ResponseEntity<?> getWardSummary(@RequestBody WardDTO request) {
-        try {
-            WardSummaryDTO dto = wardService.getWardSummaryByCredentials(request.wardName(), request.password());
-            return ResponseEntity.ok(dto);
-        } catch (jakarta.persistence.EntityNotFoundException ex) {
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password"));
-        }
     }
 }

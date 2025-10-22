@@ -25,13 +25,13 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
     private final MenuRepository menuRepository;
-    private final KitchenService kitchenService;
+    //private final KitchenService kitchenService;
 
-   public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
+    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
-        }
+    }
 
     // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
     public RestrictionUpdateResultDTO addRestrictionAndReassignFoodType(Long patientId, String restriction) {
@@ -62,10 +62,10 @@ public class PatientService {
             String mealName = (nextMeal != null) ? nextMeal.getName() : "No scheduled meal";
             String mealIngredients = (nextMeal != null) ? nextMeal.getIngredients() : "N/A";
             return new RestrictionUpdateResultDTO(
-                "Restriction '" + restriction + "' added successfully. The patient's next meal is still suitable.",
-                patient.getFoodType() != null ? patient.getFoodType().getTypeName() : "N/A",
-                mealName,
-                mealIngredients
+                    "Restriction '" + restriction + "' added successfully. The patient's next meal is still suitable.",
+                    patient.getFoodType() != null ? patient.getFoodType().getTypeName() : "N/A",
+                    mealName,
+                    mealIngredients
             );
         }
 
@@ -78,13 +78,13 @@ public class PatientService {
                 if (potentialMeal != null && !checkMealForConflicts(potentialMeal, patient)) {
                     // Alternative found! Update the patient's diet.
                     patient.setFoodType(potentialFoodType);
-        patientRepository.save(patient);
+                    patientRepository.save(patient);
 
                     return new RestrictionUpdateResultDTO(
-                        "Conflict detected! Patient has been successfully reassigned to a new diet.",
-                        potentialFoodType.getTypeName(),
-                        potentialMeal.getName(),
-                        potentialMeal.getIngredients()
+                            "Conflict detected! Patient has been successfully reassigned to a new diet.",
+                            potentialFoodType.getTypeName(),
+                            potentialMeal.getName(),
+                            potentialMeal.getIngredients()
                     );
                 }
             }
@@ -93,10 +93,10 @@ public class PatientService {
         // Case C: Conflict exists, but no alternative could be found.
         patientRepository.save(patient); // Save the patient with the new restriction anyway.
         return new RestrictionUpdateResultDTO(
-            "Restriction '" + restriction + "' added, but a conflict was detected and NO suitable alternative food type could be found. Manual review required.",
-            patient.getFoodType().getTypeName(),
-            nextMeal.getName(),
-            nextMeal.getIngredients()
+                "Restriction '" + restriction + "' added, but a conflict was detected and NO suitable alternative food type could be found. Manual review required.",
+                patient.getFoodType().getTypeName(),
+                nextMeal.getName(),
+                nextMeal.getIngredients()
         );
     }
 
@@ -104,7 +104,7 @@ public class PatientService {
     private boolean checkMealForConflicts(Meal meal, Patient patient) {
         if (meal == null || meal.getIngredients() == null) return false;
         String ingredients = meal.getIngredients().toLowerCase();
-        
+
         for (String restriction : patient.getRestriction()) {
             if (ingredients.contains(restriction.toLowerCase())) {
                 return true; // Conflict found
@@ -192,19 +192,24 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    // vil aðeins hreynsa þennan kóða
+    // tekur inn patient og nær í FoodType fyrir hann. Núllstillir menum ef hann hefur FoodType skráða og finnur skráðan matseðil fyrir þann dag og náum í næstu máltíð.
+    // skilar svo Patient með matseðli dagsins í DTO
     public PatientMealDTO mapToPatientMealDTO(Patient patient) {
         var foodType = patient.getFoodType();
 
         Menu menu = null;
         if (foodType != null) {
+            // fáum matseðil dagsins
             menu = menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null);
         }
 
         Meal nextMeal = null;
         if (menu != null) {
-            MealPeriod period = MealPeriod.current(LocalTime.now());
-            nextMeal = period.getMealFromMenu(menu);
-    }
+            //MealPeriod period = MealPeriod.current(LocalTime.now());
+            nextMeal = MealPeriod.current(LocalTime.now()).getMealFromMenu(menu); //náum í næstu máltíð
+        }
+
 
         MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
 
@@ -234,11 +239,21 @@ public class PatientService {
     }
 
     // UC 1:
-    // finnur sjúkling og skilar food type
-    public boolean OrderFood(Long patientId, String foodType) {
+    public boolean orderFood(Long patientId, String foodType) {
+        if (patientId == null || foodType == null || foodType.isBlank()) return false;
+
         Patient patient = patientRepository.findById(patientId).orElse(null);
         if (patient == null) return false;
 
+        FoodType chosen = foodTypeRepository.findByTypeNameIgnoreCase(foodType).orElse(null);
+        if (chosen == null) return false;
+
+        patient.setFoodType(chosen);
+        patientRepository.save(patient);
+
+        return true;
+    }
 }
+
 
 

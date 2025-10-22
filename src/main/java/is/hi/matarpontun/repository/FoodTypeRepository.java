@@ -11,4 +11,5 @@ public interface FoodTypeRepository extends JpaRepository<FoodType, Long> {
      * @return An Optional containing the FoodType if found, or an empty Optional.
      */
     Optional<FoodType> findByTypeName(String typeName);
+    Optional<FoodType> findByTypeNameIgnoreCase(String typeName);
 }

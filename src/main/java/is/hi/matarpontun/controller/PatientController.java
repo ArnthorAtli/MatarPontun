@@ -36,10 +36,10 @@ public class PatientController {
     // we will look up the ward based on the token in the Authorization header.
     @GetMapping("/all")
     public ResponseEntity<?> getAllPatientsForWard(@RequestBody WardDTO request) {
-        var wardOpt =  wardService.signInAndGetData(request.wardName(), request.password());
+        var wardPatientsInfo =  wardService.signInAndGetData(request.wardName(), request.password());
 
-        if (wardOpt.isPresent()) {
-            return ResponseEntity.ok(wardOpt.get());
+        if (wardPatientsInfo.isPresent()) {
+            return ResponseEntity.ok(wardPatientsInfo.get());
         } else {
             return ResponseEntity.status(404)
                     .body(Map.of("error", "Invalid ward name or password"));
@@ -50,30 +50,14 @@ public class PatientController {
     @GetMapping("{id}")
     public ResponseEntity<?> getPatientByIdForWard(@RequestBody WardDTO request,
                                                    @PathVariable Long id) {
-        var patientOpt = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
+        var patientInfo = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
 
-        if (patientOpt.isPresent()) {
-            return ResponseEntity.ok(patientOpt.get());
+        if (patientInfo.isPresent()) {
+            return ResponseEntity.ok(patientInfo.get());
         } else {
             return ResponseEntity.status(404)
                     .body(Map.of("error", "Patient not found for this ward or invalid login"));
         }
-    }
-
-    /**
-     * UC12 – Add a single restriction string to the patient's restriction list.
-     * Example request:
-     *   POST /patients/3/restrictions/add
-     *   { "restriction": "no sugar" }
-     */
-    @PostMapping("/{id}/restrictions/add")
-    public ResponseEntity<PatientMealDTO> addRestriction(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
-
-        String restriction = request.get("restriction");
-        Patient updated = patientService.addRestriction(id, restriction);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     @PostMapping("/{id}/restrictions/addAndReassign")
@@ -88,6 +72,22 @@ public class PatientController {
 
         RestrictionUpdateResultDTO result = patientService.addRestrictionAndReassignFoodType(id, restriction);
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * UC12 – Add a single restriction string to the patient's restriction list.
+     * Example request:
+     *   POST /patients/3/restrictions/add
+     *   { "restriction": "ig3" }
+     */
+    @PostMapping("/{id}/restrictions/add")
+    public ResponseEntity<PatientMealDTO> addRestriction(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        String restriction = request.get("restriction");
+        Patient updated = patientService.addRestriction(id, restriction);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     //Remove one or more restrictions
@@ -152,20 +152,34 @@ public class PatientController {
         return ResponseEntity.ok(Map.of("message", successMessage));
     }
 
-    // UC1: order food type
+    /**
+     * UC1 – Orders a specific food type for a patient.
+     *
+     * @param id    the patient's ID
+     * @param body  contains the chosen food type name
+     * @return a success message if the order was made, the
+     * patient's ID and the food type, otherwise an error message
+     */
     @PostMapping("{id}/order")
-    public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id,
-                                                 @RequestBody Map<String, String> body) {
+    public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String foodType = body.get("foodType");
         if (foodType == null || foodType.isBlank()) {
             return ResponseEntity.badRequest().body("Missing foodType");
         }
 
-        boolean ok = patientService.OrderFood(id, foodType);
-        if (ok) return ResponseEntity.ok().build();
+        boolean ok = patientService.orderFood(id, foodType);
+        if (ok) {
+            return ResponseEntity.ok(
+                    java.util.Map.of(
+                            "message", "Order has been made",
+                            "patientId", id,
+                            "foodType", body.get("foodType")
+                    )
+            );
+        }
+
         return ResponseEntity.badRequest().body("Order failed");
     }
-
 
 }
 
