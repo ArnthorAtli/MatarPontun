@@ -155,41 +155,4 @@ public class MealOrderService {
             return "No pending order found. Updated patient's default diet to '" + newFoodTypeName + "'.";
         }
     }
-    /* // til að eiga óbreytta aðferð:
-    public List<MealOrder> generateOrdersForPatients(List<Patient> patients) {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate today = LocalDate.now();
-
-        List<MealOrder> createdOrders = new ArrayList<>();
-
-        // held ég vilji hér kalla á aðferðina
-        for (Patient patient : patients) {
-            if (patient.getFoodType() == null) continue; // ef ekki skráð FoodType -> ekkert gert
-
-            var foodType = patient.getFoodType();
-
-            Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
-            if (menu == null) continue;
-
-            // Use the shared enum logic
-            MealPeriod period = MealPeriod.current(LocalTime.now());
-            Meal meal = period.getMealFromMenu(menu);
-            if (meal == null) continue;
-
-            MealOrder order = new MealOrder();
-            order.setOrderTime(now);
-            order.setMealType(meal.getCategory());
-            order.setMeal(meal);
-            order.setPatient(patient);
-            order.setMenu(menu);
-            order.setFoodType(foodType);
-            order.setStatus("PENDING");
-
-            mealOrderRepository.save(order);
-            createdOrders.add(order);
-        }
-        return createdOrders;
-    }
-
-     */
 }
