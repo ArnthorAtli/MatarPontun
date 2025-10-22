@@ -1,9 +1,6 @@
 package is.hi.matarpontun.controller;
 
-import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.WardDTO;
-import is.hi.matarpontun.dto.WardSummaryDTO;
-import is.hi.matarpontun.dto.WardUpdateDTO;
+import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.http.ResponseEntity;
@@ -72,22 +69,15 @@ public class WardController {
     }
 
     //UC2 - Order meal at mealtime, vil ekki telja ef ekkert pantað fyrir sjúklinginn?
-    @GetMapping("/{id}/order")
+    @PostMapping("/{id}/order")
     public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
-        List<PatientMealDTO> patients = wardService.generateMealOrdersForWard(id); // hér fer pöntunin fram
+        OrderDTO order = wardService.generateMealOrdersForWard(id); // hér fer pöntunin fram
 
-        if (patients.isEmpty()) {
-            return ResponseEntity.ok(Map.of(
-                    "message", "No meals were ordered. Possibly no suitable meals found for this ward."
-            ));
-        }
-
-        Map<String, Object> response = new LinkedHashMap<>(); // skilar útkomunni í ákveðni röð
-        response.put("message", "Meal orders successfully created and logged.");
-        response.put("totalPatients", patients.size());
-        response.put("patients", patients);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of(
+                "message", "Meal orders successfully created and logged.",
+                "ward", order.wardName(),
+                "rooms", order.rooms()
+        ));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
