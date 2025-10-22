@@ -1,14 +1,13 @@
 package is.hi.matarpontun.controller;
 
-import is.hi.matarpontun.dto.ManualFoodTypeChangeDTO;
-import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.RestrictionUpdateResultDTO;
-import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.dto.OrderDTO;
 import is.hi.matarpontun.service.MealOrderService;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -217,18 +216,16 @@ public class PatientController {
             return ResponseEntity.badRequest().body("Missing foodType");
         }
 
-        boolean ok = patientService.orderFood(id, foodType);
-        if (ok) {
-            return ResponseEntity.ok(
-                    java.util.Map.of(
-                            "message", "Order has been made",
-                            "patientId", id,
-                            "foodType", body.get("foodType")
-                    )
-            );
-        }
+        // Call the service method
+        MealOrder order = mealOrderService.orderFoodTypeForPatient(id, foodType);
 
-        return ResponseEntity.badRequest().body("Order failed");
+        return ResponseEntity.ok(Map.of(
+                "message", "Order logged and sent to kitchen",
+                "patientId", id,
+                "mealType", order.getMealType(),
+                "foodType", order.getFoodType().getTypeName(),
+                "status", order.getStatus()
+        ));
     }
 }
 

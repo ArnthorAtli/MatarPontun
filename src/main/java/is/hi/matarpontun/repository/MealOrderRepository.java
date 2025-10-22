@@ -27,3 +27,28 @@ public interface MealOrderRepository extends JpaRepository<MealOrder, Long> {
             @Param("mealType") String mealType
     );
 }
+/*
+Optional<MealOrder> findFirstByPatientAndStatusAndMealTypeOrderByOrderTimeDesc(
+        Patient patient,
+        String status,
+        String mealType
+);
+
+
+@Query("""
+    SELECT mo FROM MealOrder mo
+    WHERE mo.patient = :patient
+      AND mo.status = :status
+      AND mo.mealType = :mealType
+    ORDER BY mo.orderTime DESC
+    """)
+List<MealOrder> findPendingOrders(
+        @Param("patient") Patient patient,
+        @Param("status") String status,
+        @Param("mealType") String mealType
+);
+
+Then pick the first result in Java:
+var nextOrderOpt = mealOrderRepository.findPendingOrders(patient, "PENDING", currentMealType)
+                                      .stream().findFirst();
+*/

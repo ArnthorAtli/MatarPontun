@@ -37,42 +37,76 @@ public class MealOrderService {
     }
 
     /**
-     * UC2 - Generate Meal Orders for a list of patients (used manually or automatically)
-     * This will be sent to the kitchen i think
+     * UC1 – Ward staff manually orders a food type for one patient
      */
-    // upphafstillum tímann -SKOÐA!!
+    public MealOrder orderFoodTypeForPatient(Long patientId, String foodTypeName) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        FoodType assigned = patient.getFoodType();
+        if (assigned == null) {
+            throw new IllegalStateException("Patient has no assigned food type");
+        }
+
+        // ✅ Restrict ordering to the patient's assigned food type only
+        if (!assigned.getTypeName().equalsIgnoreCase(foodTypeName)) {
+            throw new IllegalArgumentException(
+                    "Patient " + patient.getName() +
+                            " is assigned to '" + assigned.getTypeName() +
+                            "' and cannot order '" + foodTypeName + "'");
+        }
+
+        return createAndSaveOrder(patient, assigned, "SENT_TO_KITCHEN");
+    }
+
+
+    /**
+     * UC2 – Automatically generate meal orders for multiple patients
+     */
     public List<MealOrder> generateOrdersForPatients(List<Patient> patients) {
         LocalDateTime now = LocalDateTime.now();
-        LocalDate today = LocalDate.now();
-
         List<MealOrder> createdOrders = new ArrayList<>();
 
-        // held ég vilji hér kalla á aðferðina
         for (Patient patient : patients) {
-            var foodType = patient.getFoodType();
-            if (foodType == null) continue; // ef ekki skráð FoodType -> ekkert gert
+            FoodType foodType = patient.getFoodType();
+            if (foodType == null) continue; // skip patients with no diet
 
-            Menu menuOfTheDay = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null); // á að skila matseðli dagsins fyrir FoodType
-            if (menuOfTheDay == null) continue;
-
-            // Use the shared enum logic
-            Meal nextMeal = MealPeriod.current(LocalTime.now()).getMealFromMenu(menuOfTheDay); // náum í næstu máltíð
-            if (nextMeal == null) continue;
-
-            MealOrder order = new MealOrder();
-            order.setOrderTime(now); // pöntunartími
-            order.setMealType(nextMeal.getCategory());
-            order.setMeal(nextMeal);
-            order.setPatient(patient);
-            order.setMenu(menuOfTheDay);
-            order.setFoodType(foodType);
-            order.setStatus("PENDING");
-
-            mealOrderRepository.save(order);
-            createdOrders.add(order);
+            MealOrder order = createAndSaveOrder(patient, foodType, "PENDING", now);
+            if (order != null) createdOrders.add(order);
         }
+
         return createdOrders;
     }
+
+    /**
+     * 🔒 Private helper: central logic for creating MealOrder entries
+     */
+    private MealOrder createAndSaveOrder(Patient patient, FoodType foodType, String status) {
+        return createAndSaveOrder(patient, foodType, status, LocalDateTime.now());
+    }
+
+    private MealOrder createAndSaveOrder(Patient patient, FoodType foodType, String status, LocalDateTime orderTime) {
+        LocalDate today = LocalDate.now();
+        Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today)
+                .orElse(null);
+        if (menu == null) return null;
+
+        MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());
+        Meal meal = currentPeriod.getMealFromMenu(menu);
+        if (meal == null) return null;
+
+        MealOrder order = new MealOrder();
+        order.setOrderTime(orderTime);
+        order.setMealType(meal.getCategory());
+        order.setMeal(meal);
+        order.setPatient(patient);
+        order.setMenu(menu);
+        order.setFoodType(foodType);
+        order.setStatus(status);
+
+        return mealOrderRepository.save(order);
+    }
+
 
     // þetta keyrir sjálfkrafa á sceduled tímum - SKOÐA TÍMA hvenær eldhúið vill fá miðana
     @Scheduled(cron = "0 0 0,10,13,17,21 * * *")

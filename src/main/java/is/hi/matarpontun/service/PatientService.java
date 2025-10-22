@@ -1,6 +1,7 @@
 package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.MenuOfTheDayDTO;
+import is.hi.matarpontun.dto.OrderDTO;
 import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.RestrictionUpdateResultDTO;
 import is.hi.matarpontun.model.FoodType;
@@ -25,13 +26,14 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
     private final MenuRepository menuRepository;
-    //private final KitchenService kitchenService;
+    private final KitchenService kitchenService;
 
 
-    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
+    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository, KitchenService kitchenService) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
+        this.kitchenService = kitchenService;
     }
 
     // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
@@ -241,19 +243,20 @@ public class PatientService {
     }
 
     // UC 1:
-    public boolean orderFood(Long patientId, String foodType) {
-        if (patientId == null || foodType == null || foodType.isBlank()) return false;
+    public OrderDTO orderFood(Long patientId, String foodTypeName) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
 
-        Patient patient = patientRepository.findById(patientId).orElse(null);
-        if (patient == null) return false;
+        FoodType foodType = foodTypeRepository.findByTypeNameIgnoreCase(foodTypeName)
+                .orElseThrow(() -> new EntityNotFoundException("Food type not found"));
 
-        FoodType chosen = foodTypeRepository.findByTypeNameIgnoreCase(foodType).orElse(null);
-        if (chosen == null) return false;
-
-        patient.setFoodType(chosen);
+        patient.setFoodType(foodType);
         patientRepository.save(patient);
 
-        return true;
+        // Log and send to kitchen
+        kitchenService.logOrder(patient, foodType);
+
+        return new OrderDTO(patient.getName(), foodType.getTypeName());
     }
 }
 
