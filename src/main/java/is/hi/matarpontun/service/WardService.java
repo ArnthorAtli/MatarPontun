@@ -61,6 +61,7 @@ public class WardService {
     }
 
     // UC6: update ward
+    @Transactional
     public Ward updateWard(Long id, WardUpdateDTO req) {
         Ward ward = wardRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found"));
