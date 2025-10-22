@@ -117,25 +117,11 @@ public class WardService {
 
     // --------------------- Private Helpers ---------------------
     private WardFullDTO mapToWardFullDTO(Ward ward) {
-        var patientDTOs = ward.getPatients().stream()// held að stream fari í gegnum alla
+        var patientDTOs = ward.getPatients().stream()
                 .map(patientService::mapToPatientMealDTO)
                 .toList();
 
         return new WardFullDTO(ward.getWardName(), patientDTOs);
     }
 }
-/*
-/*
-    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this ward
-    public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
-        Ward ward = wardRepository.findById(wardId)
-                .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
-        // Persist orders internally (system logs and kitchen)
-        mealOrderService.generateOrdersForPatients(ward.getPatients());
 
-        // Return clean DTOs for ward staff review
-        return ward.getPatients().stream()
-                .map(patientService::mapToPatientMealDTO)
-                .toList();
-    }
- */

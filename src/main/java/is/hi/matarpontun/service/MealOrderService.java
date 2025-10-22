@@ -6,7 +6,6 @@ import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MealOrderRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
-import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.util.MealPeriod;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -64,28 +63,6 @@ public class MealOrderService {
         }
         return buildMealOrder(patient, assigned, LocalDateTime.now());
     }
-
-
-    /**
-     * UC2 – Automatically generate meal orders for multiple patients
-     */
-    /*
-    // viljum hafa DTO output
-    public List<MealOrder> generateOrdersForPatients(List<Patient> patients) {
-        LocalDateTime now = LocalDateTime.now();
-        List<MealOrder> createdOrders = new ArrayList<>();
-
-        for (Patient patient : patients) {
-            FoodType foodType = patient.getFoodType();
-            if (foodType == null) continue; // skip patients with no diet
-
-            MealOrder order = createAndSaveOrder(patient, foodType, "PENDING", now);
-            if (order != null) createdOrders.add(order);
-        }
-        return createdOrders;
-    }
-     */
-
 
     public OrderDTO generateOrdersForWard(Ward ward) {
         LocalDate today = LocalDate.now();
@@ -190,7 +167,7 @@ public class MealOrderService {
         return "No pending order found. Created new order for '" + newFoodTypeName + "'.";
     }
 
-    // --- Helper for creating and saving orders ---
+    // --- Helpers for creating and saving orders ---
     private MealOrder buildMealOrder(Patient p, FoodType ft, Menu m, Meal meal, MealPeriod period) {
         MealOrder order = new MealOrder();
         order.setOrderTime(LocalDateTime.now());
@@ -217,79 +194,4 @@ public class MealOrderService {
 
         return buildMealOrder(p, ft, menu, meal, period);
     }
-
-    /**
-     * UC2 – Generate and return meal orders for one ward (grouped by room)
-     */
-     /*
-    public OrderDTO orderFoodForWard(Ward ward) {
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
-        MealPeriod currentPeriod = MealPeriod.current(now);
-
-        List<Patient> patients = ward.getPatients();
-        List<OrderDTO.RoomInfo> roomDTOs = new ArrayList<>();
-
-        // Group patients by room number
-        var groupedByRoom = patients.stream()
-                .collect(Collectors.groupingBy(p -> p.getRoom().getRoomNumber()));
-
-        for (var entry : groupedByRoom.entrySet()) {
-            String roomNumber = entry.getKey();
-            List<Patient> roomPatients = entry.getValue();
-            List<OrderDTO.PatientInfo> patientInfos = new ArrayList<>();
-
-            for (Patient patient : roomPatients) {
-                FoodType foodType = patient.getFoodType();
-                if (foodType == null) continue;
-
-                // Find today's menu for the patient's food type
-                Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
-                if (menu == null) continue;
-
-                Meal meal = currentPeriod.getMealFromMenu(menu);
-                if (meal == null) continue;
-
-                // Create and save a MealOrder (using your existing helper)
-                MealOrder order = createAndSaveOrder(patient, foodType, "PENDING");
-                if (order == null) continue;
-
-                patientInfos.add(new OrderDTO.PatientInfo(
-                        patient.getName(),
-                        foodType.getTypeName(),
-                        meal.getName()
-                ));
-            }
-
-            roomDTOs.add(new OrderDTO.RoomInfo(roomNumber, patientInfos));
-        }
-
-        return new OrderDTO(ward.getWardName(), roomDTOs);
-    }
-    */
-
-    /*
-    private MealOrder createAndSaveOrder(Patient patient, FoodType foodType, String status, LocalDateTime orderTime) {
-        LocalDate today = LocalDate.now();
-        Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today)
-                .orElse(null);
-        if (menu == null) return null;
-
-        MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());
-        Meal meal = currentPeriod.getMealFromMenu(menu);
-        if (meal == null) return null;
-
-        MealOrder order = new MealOrder();
-        order.setOrderTime(orderTime);
-        order.setMealType(meal.getCategory());
-        order.setMeal(meal);
-        order.setPatient(patient);
-        order.setMenu(menu);
-        order.setFoodType(foodType);
-        order.setStatus(status);
-
-        return mealOrderRepository.save(order);
-    }
-     */
-
 }

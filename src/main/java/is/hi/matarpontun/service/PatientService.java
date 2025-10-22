@@ -113,22 +113,7 @@ public class PatientService {
         return Stream.concat(patient.getRestriction().stream(), patient.getAllergies().stream())
                 .map(String::toLowerCase)
                 .anyMatch(ingredients::contains);
-
-        /*for (String restriction : patient.getRestriction()) {
-            if (ingredients.contains(restriction.toLowerCase())) {
-                return true; // Conflict found
-            }
-        }
-        for (String allergy : patient.getAllergies()) {
-            if (ingredients.contains(allergy.toLowerCase())) {
-                return true; // Conflict found
-            }
-        }
-        return false; // No conflicts
-        */
     }
-
-
 
     public Optional<Patient> findById(Long patientID) {
         return patientRepository.findById(patientID);
@@ -242,23 +227,6 @@ public class PatientService {
                 menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
         );
     }
-
-    // UC 1:
-   /* public OrderDTO orderFood(Long patientId, String foodTypeName) {
-        Patient patient = patientRepository.findById(patientId)
-                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
-
-        FoodType foodType = foodTypeRepository.findByTypeNameIgnoreCase(foodTypeName)
-                .orElseThrow(() -> new EntityNotFoundException("Food type not found"));
-
-        patient.setFoodType(foodType);
-        patientRepository.save(patient);
-
-        // Log and send to kitchen
-        kitchenService.logOrder(patient, foodType);
-
-        return new OrderDTO(patient.getName(), foodType.getTypeName());
-    }*/
 }
 
 
