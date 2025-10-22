@@ -27,6 +27,7 @@ public class PatientService {
     private final MenuRepository menuRepository;
     //private final KitchenService kitchenService;
 
+
     public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
@@ -42,6 +43,7 @@ public class PatientService {
         if (restriction != null && !restriction.isBlank() && !patient.getRestriction().contains(restriction)) {
             patient.getRestriction().add(restriction);
         }
+
 
         // Step 2: Determine the patient's next scheduled meal based on their current diet.
         MealPeriod currentPeriod = MealPeriod.current(LocalTime.now());

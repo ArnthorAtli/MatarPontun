@@ -98,16 +98,21 @@ public class WardService {
                 .toList();
     }
 
-    //UC16
+    // UC16 – Get summary for a single ward by ID
     @Transactional(readOnly = true)
-    public WardSummaryDTO getWardSummaryByCredentials(String wardName, String password) {
-        var ward = wardRepository.findByWardNameAndPassword(wardName, password)
-                .orElseThrow(() -> new EntityNotFoundException("Invalid ward name or password"));
+    public WardSummaryDTO getWardSummaryById(Long wardId) {
+        var ward = wardRepository.findById(wardId)
+                .orElseThrow(() -> new EntityNotFoundException("Ward not found"));
 
-        int rooms = (int) roomRepository.countByWard_Id(ward.getId());
-        int patients = (int) patientRepository.countByWard_Id(ward.getId());
+        int rooms = (int) roomRepository.countByWard_Id(wardId);
+        int patients = (int) patientRepository.countByWard_Id(wardId);
 
-        return new WardSummaryDTO(ward.getId(), ward.getWardName(), rooms, patients);
+        return new WardSummaryDTO(
+                ward.getId(),
+                ward.getWardName(),
+                rooms,
+                patients
+        );
     }
 
     // --------------------- Private Helpers ---------------------

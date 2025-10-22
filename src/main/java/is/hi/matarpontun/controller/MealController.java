@@ -14,6 +14,4 @@ public class MealController {
     public MealController(MealService mealService) {
         this.mealService = mealService;
     }
-
-    
 }
