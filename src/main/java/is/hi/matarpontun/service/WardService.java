@@ -1,13 +1,10 @@
 package is.hi.matarpontun.service;
 
-import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.WardFullDTO;
-import is.hi.matarpontun.dto.WardUpdateDTO;
+import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.*;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
-import is.hi.matarpontun.dto.WardSummaryDTO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -84,7 +81,7 @@ public class WardService {
         ward.setPassword(req.password());
         return wardRepository.save(ward);
     }
-
+/*
     // UC2 - Order food at mealtime -> Generate and return patient DTOs for this ward
     public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
         Ward ward = wardRepository.findById(wardId)
@@ -96,6 +93,14 @@ public class WardService {
         return ward.getPatients().stream()
                 .map(patientService::mapToPatientMealDTO)
                 .toList();
+    }
+ */
+    // UC2 - Generate meal orders for this ward and return grouped summary
+    public OrderDTO generateMealOrdersForWard(Long wardId) {
+        Ward ward = wardRepository.findById(wardId)
+                .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
+
+        return mealOrderService.orderFoodForWard(ward);
     }
 
     // UC16 – Get summary for a single ward by ID

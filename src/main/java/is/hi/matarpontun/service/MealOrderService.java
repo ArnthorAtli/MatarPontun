@@ -1,10 +1,7 @@
 package is.hi.matarpontun.service;
 
-import is.hi.matarpontun.model.FoodType;
-import is.hi.matarpontun.model.Meal;
-import is.hi.matarpontun.model.MealOrder;
-import is.hi.matarpontun.model.Menu;
-import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.dto.OrderDTO;
+import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MealOrderRepository;
 import is.hi.matarpontun.repository.MenuRepository;
@@ -20,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MealOrderService {
@@ -63,6 +61,7 @@ public class MealOrderService {
     /**
      * UC2 – Automatically generate meal orders for multiple patients
      */
+    /*
     public List<MealOrder> generateOrdersForPatients(List<Patient> patients) {
         LocalDateTime now = LocalDateTime.now();
         List<MealOrder> createdOrders = new ArrayList<>();
@@ -77,6 +76,54 @@ public class MealOrderService {
 
         return createdOrders;
     }
+     */
+    public OrderDTO orderFoodForWard(Ward ward) {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        MealPeriod currentPeriod = MealPeriod.current(now);
+
+        List<Patient> patients = ward.getPatients();
+        List<OrderDTO.RoomInfo> roomDTOs = new ArrayList<>();
+
+        // Group patients by room number
+        var groupedByRoom = patients.stream()
+                .collect(Collectors.groupingBy(p -> p.getRoom().getRoomNumber()));
+
+        for (var entry : groupedByRoom.entrySet()) {
+            String roomNumber = entry.getKey();
+            List<Patient> roomPatients = entry.getValue();
+
+            List<OrderDTO.PatientInfo> patientInfos = new ArrayList<>();
+
+            for (Patient patient : roomPatients) {
+                FoodType foodType = patient.getFoodType();
+                if (foodType == null) continue;
+
+                // Find today’s menu for the patient’s food type
+                Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
+                if (menu == null) continue;
+
+                Meal meal = currentPeriod.getMealFromMenu(menu);
+                if (meal == null) continue;
+
+                // Create and save MealOrder using your shared helper
+                MealOrder order = createAndSaveOrder(patient, foodType, "PENDING");
+                if (order == null) continue;
+
+                // Add to patient summary
+                patientInfos.add(new OrderDTO.PatientInfo(
+                        patient.getName(),
+                        foodType.getTypeName(),
+                        meal.getName()
+                ));
+            }
+
+            roomDTOs.add(new OrderDTO.RoomInfo(roomNumber, patientInfos));
+        }
+
+        return new OrderDTO(ward.getWardName(), roomDTOs);
+    }
+
 
     /**
      * 🔒 Private helper: central logic for creating MealOrder entries
@@ -107,14 +154,14 @@ public class MealOrderService {
         return mealOrderRepository.save(order);
     }
 
-
+/*
     // þetta keyrir sjálfkrafa á sceduled tímum - SKOÐA TÍMA hvenær eldhúið vill fá miðana
     @Scheduled(cron = "0 0 0,10,13,17,21 * * *")
     public void generateMealOrdersForAllPatients() { // aldrei kallað á
         List<Patient> allPatients = patientRepository.findAll();
         generateOrdersForPatients(allPatients);
         System.out.println("Automatically generated orders for all wards");
-    }
+    }*/
 
     //UC3 - Manually change the next meal's food type for a patient
     public String manuallyChangeNextMeal(Long patientId, String newFoodTypeName) {
@@ -164,4 +211,53 @@ public class MealOrderService {
         patientRepository.save(patient);
         return "No pending order found. Updated patient's default food type to '" + newFoodTypeName + "'.";
     }
+
+    /**
+     * UC2 – Generate and return meal orders for one ward (grouped by room)
+     */
+    public OrderDTO orderFoodForWard(Ward ward) {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        MealPeriod currentPeriod = MealPeriod.current(now);
+
+        List<Patient> patients = ward.getPatients();
+        List<OrderDTO.RoomInfo> roomDTOs = new ArrayList<>();
+
+        // Group patients by room number
+        var groupedByRoom = patients.stream()
+                .collect(Collectors.groupingBy(p -> p.getRoom().getRoomNumber()));
+
+        for (var entry : groupedByRoom.entrySet()) {
+            String roomNumber = entry.getKey();
+            List<Patient> roomPatients = entry.getValue();
+            List<OrderDTO.PatientInfo> patientInfos = new ArrayList<>();
+
+            for (Patient patient : roomPatients) {
+                FoodType foodType = patient.getFoodType();
+                if (foodType == null) continue;
+
+                // Find today's menu for the patient's food type
+                Menu menu = menuRepository.findByFoodTypeAndDate(foodType, today).orElse(null);
+                if (menu == null) continue;
+
+                Meal meal = currentPeriod.getMealFromMenu(menu);
+                if (meal == null) continue;
+
+                // Create and save a MealOrder (using your existing helper)
+                MealOrder order = createAndSaveOrder(patient, foodType, "PENDING");
+                if (order == null) continue;
+
+                patientInfos.add(new OrderDTO.PatientInfo(
+                        patient.getName(),
+                        foodType.getTypeName(),
+                        meal.getName()
+                ));
+            }
+
+            roomDTOs.add(new OrderDTO.RoomInfo(roomNumber, patientInfos));
+        }
+
+        return new OrderDTO(ward.getWardName(), roomDTOs);
+    }
+
 }

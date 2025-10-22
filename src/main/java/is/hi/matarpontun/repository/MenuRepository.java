@@ -9,12 +9,4 @@ import java.util.Optional;
 
 public interface MenuRepository extends JpaRepository<Menu, Long> {
     Optional<Menu> findByFoodTypeAndDate(FoodType foodType, LocalDate date);
-
-    /*
-    Menu save(Menu menu);
-    Menu delete(Date date, String foodType);
-    Menu findAll(Menu menu);
-    Menu findByDate(Date date);
-    Menu findByFoodType(String foodType);
-    */
 }

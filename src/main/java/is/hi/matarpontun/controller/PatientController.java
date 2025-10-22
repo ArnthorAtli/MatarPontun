@@ -3,7 +3,6 @@ package is.hi.matarpontun.controller;
 import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Patient;
-import is.hi.matarpontun.dto.OrderDTO;
 import is.hi.matarpontun.service.MealOrderService;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
