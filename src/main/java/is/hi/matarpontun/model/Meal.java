@@ -13,7 +13,15 @@ public class Meal {
     private Long id;
 
     private String name;
+
+    /* Getum þá notað query
+    @ElementCollection
+    @CollectionTable(name = "meal_ingredients", joinColumns = @JoinColumn(name = "meal_id"))
+    @Column(name = "ingredient")
+    private List<String> ingredients;
+     */
     private String ingredients;
+
     private String category;
 
     @ManyToOne
@@ -67,4 +75,9 @@ public class Meal {
     public void setFoodType(FoodType foodType) {
         this.foodType = foodType;
     }
+
+    public boolean containsIngredient(String ingredient) {
+        return ingredients != null && ingredients.contains(ingredient);
+    }
+
 }

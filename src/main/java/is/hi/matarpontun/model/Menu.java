@@ -5,7 +5,10 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "menus")
+@Table( //cus only want one menu per diet per day
+        name = "menus",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"food_type_id", "date"})
+)
 public class Menu {
 
     @Id
@@ -100,6 +103,18 @@ public class Menu {
     }
     public void setFoodType(FoodType foodType) {
         this.foodType = foodType;
+    }
+
+    //kannski nota
+    public Meal getMealByCategory(String category) {
+        return switch (category.toLowerCase()) {
+            case "breakfast" -> breakfast;
+            case "lunch" -> lunch;
+            case "afternoon" -> afternoonSnack;
+            case "dinner" -> dinner;
+            case "night" -> nightSnack;
+            default -> null;
+        };
     }
 
 }

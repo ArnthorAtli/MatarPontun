@@ -16,8 +16,10 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 public class PatientService {
@@ -25,16 +27,16 @@ public class PatientService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
     private final MenuRepository menuRepository;
-    private final KitchenService kitchenService;
 
-   public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository, KitchenService kitchenService) {
+
+    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository, MenuRepository menuRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
         this.menuRepository = menuRepository;
-       this.kitchenService = kitchenService;
-        }
+    }
 
     // Adds a restriction to a patient and checks if their next meal is still suitable. If not, attempts to reassign a new food type.
+    // seinna til að bæta: The meal suitability logic could later be factored into a small helper or utility (e.g. DietCompatibilityService) so it can also be reused by UC2
     public RestrictionUpdateResultDTO addRestrictionAndReassignFoodType(Long patientId, String restriction) {
         // Step 1: Find the patient and add the new restriction.
         Patient patient = patientRepository.findById(patientId)
@@ -64,10 +66,10 @@ public class PatientService {
             String mealName = (nextMeal != null) ? nextMeal.getName() : "No scheduled meal";
             String mealIngredients = (nextMeal != null) ? nextMeal.getIngredients() : "N/A";
             return new RestrictionUpdateResultDTO(
-                "Restriction '" + restriction + "' added successfully. The patient's next meal is still suitable.",
-                patient.getFoodType() != null ? patient.getFoodType().getTypeName() : "N/A",
-                mealName,
-                mealIngredients
+                    "Restriction '" + restriction + "' added successfully. The patient's next meal is still suitable.",
+                    patient.getFoodType() != null ? patient.getFoodType().getTypeName() : "N/A",
+                    mealName,
+                    mealIngredients
             );
         }
 
@@ -80,13 +82,13 @@ public class PatientService {
                 if (potentialMeal != null && !checkMealForConflicts(potentialMeal, patient)) {
                     // Alternative found! Update the patient's diet.
                     patient.setFoodType(potentialFoodType);
-        patientRepository.save(patient);
+                    patientRepository.save(patient);
 
                     return new RestrictionUpdateResultDTO(
-                        "Conflict detected! Patient has been successfully reassigned to a new diet.",
-                        potentialFoodType.getTypeName(),
-                        potentialMeal.getName(),
-                        potentialMeal.getIngredients()
+                            "Conflict detected! Patient has been successfully reassigned to a new diet.",
+                            potentialFoodType.getTypeName(),
+                            potentialMeal.getName(),
+                            potentialMeal.getIngredients()
                     );
                 }
             }
@@ -95,29 +97,45 @@ public class PatientService {
         // Case C: Conflict exists, but no alternative could be found.
         patientRepository.save(patient); // Save the patient with the new restriction anyway.
         return new RestrictionUpdateResultDTO(
-            "Restriction '" + restriction + "' added, but a conflict was detected and NO suitable alternative food type could be found. Manual review required.",
-            patient.getFoodType().getTypeName(),
-            nextMeal.getName(),
-            nextMeal.getIngredients()
+                "Restriction '" + restriction + "' added, but a conflict was detected and NO suitable alternative food type could be found. Manual review required.",
+                patient.getFoodType().getTypeName(),
+                nextMeal.getName(),
+                nextMeal.getIngredients()
         );
     }
 
     // Helper method to check a meal against all of a patient's restrictions and allergies.
-    private boolean checkMealForConflicts(Meal meal, Patient patient) {
+    // seinna til að bæta: when Meal.ingredients becomes a List<String>, this can loop directly over ingredients instead of string matching.
+    //  Shared dietary conflict logic (UC2 + UC3)
+    public boolean checkMealForConflicts(Meal meal, Patient patient) {
         if (meal == null || meal.getIngredients() == null) return false;
+
+        // Split ingredients into tokens (remove spaces)
+        List<String> mealIngredients = Arrays.stream(meal.getIngredients().split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .toList();
+
+        for (String r : patient.getRestriction()) {
+            if (mealIngredients.contains(r.toLowerCase().trim())) {
+                return true;
+            }
+        }
+        for (String a : patient.getAllergies()) {
+            if (mealIngredients.contains(a.toLowerCase().trim())) {
+                return true;
+            }
+        }
+        return false;
+
+        /*
         String ingredients = meal.getIngredients().toLowerCase();
-        
-        for (String restriction : patient.getRestriction()) {
-            if (ingredients.contains(restriction.toLowerCase())) {
-                return true; // Conflict found
-            }
-        }
-        for (String allergy : patient.getAllergies()) {
-            if (ingredients.contains(allergy.toLowerCase())) {
-                return true; // Conflict found
-            }
-        }
-        return false; // No conflicts
+
+        return Stream.concat(patient.getRestriction().stream(), patient.getAllergies().stream())
+                .map(String::toLowerCase)
+                .anyMatch(ingredients::contains);
+
+         */
     }
 
     public Optional<Patient> findById(Long patientID) {
@@ -194,19 +212,17 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    // tekur inn patient og nær í FoodType fyrir hann. Núllstillir menum ef hann hefur FoodType skráða og finnur skráðan matseðil fyrir þann dag og náum í næstu máltíð.
+    // skilar svo Patient með matseðli dagsins í DTO
     public PatientMealDTO mapToPatientMealDTO(Patient patient) {
         var foodType = patient.getFoodType();
+        Menu menu = (foodType != null)
+                ? menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null)
+                : null;
 
-        Menu menu = null;
-        if (foodType != null) {
-            menu = menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null);
-        }
-
-        Meal nextMeal = null;
-        if (menu != null) {
-            MealPeriod period = MealPeriod.current(LocalTime.now());
-            nextMeal = period.getMealFromMenu(menu);
-    }
+        Meal nextMeal = (menu != null)
+                ? MealPeriod.current(LocalTime.now()).getMealFromMenu(menu)
+                : null;
 
         MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
 
@@ -234,22 +250,7 @@ public class PatientService {
                 menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
         );
     }
-
-    // UC 1:
-    public boolean orderFood(Long patientId, String foodType) {
-        if (patientId == null || foodType == null || foodType.isBlank()) return false;
-
-        Patient patient = patientRepository.findById(patientId).orElse(null);
-        if (patient == null) return false;
-
-        FoodType chosen = foodTypeRepository.findByTypeNameIgnoreCase(foodType).orElse(null);
-        if (chosen == null) return false;
-
-        patient.setFoodType(chosen);
-        patientRepository.save(patient);
-
-        return true;
-    }
 }
+
 
 

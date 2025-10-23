@@ -12,8 +12,8 @@ public class MealOrder {
     private Long id;
 
     private LocalDateTime orderTime;
-    private String mealType; // breakfast, lunch, dinner, etc.
-    private String status = "PENDING"; // could be CONFIRMED, SENT, DELIVERED
+    private String mealType; // setja seinna sem enum, breakfast, lunch, dinner, etc.
+    private String status = "PENDING"; // setja seinna sem enum, could be CONFIRMED, SENT, DELIVERED
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patient_id")

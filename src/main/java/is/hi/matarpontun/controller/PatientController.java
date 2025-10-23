@@ -1,14 +1,12 @@
 package is.hi.matarpontun.controller;
 
-import is.hi.matarpontun.dto.ManualFoodTypeChangeDTO;
-import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.RestrictionUpdateResultDTO;
-import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.MealOrder;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.service.MealOrderService;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,10 +40,10 @@ public class PatientController {
      */
     @GetMapping("/all")
     public ResponseEntity<?> getAllPatientsForWard(@RequestBody WardDTO request) {
-        var wardOpt =  wardService.signInAndGetData(request.wardName(), request.password());
+        var wardPatientsInfo =  wardService.signInAndGetData(request.wardName(), request.password());
 
-        if (wardOpt.isPresent()) {
-            return ResponseEntity.ok(wardOpt.get());
+        if (wardPatientsInfo.isPresent()) {
+            return ResponseEntity.ok(wardPatientsInfo.get());
         } else {
             return ResponseEntity.status(404)
                     .body(Map.of("error", "Invalid ward name or password"));
@@ -62,10 +60,10 @@ public class PatientController {
     @GetMapping("{id}")
     public ResponseEntity<?> getPatientByIdForWard(@RequestBody WardDTO request,
                                                    @PathVariable Long id) {
-        var patientOpt = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
+        var patientInfo = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
 
-        if (patientOpt.isPresent()) {
-            return ResponseEntity.ok(patientOpt.get());
+        if (patientInfo.isPresent()) {
+            return ResponseEntity.ok(patientInfo.get());
         } else {
             return ResponseEntity.status(404)
                     .body(Map.of("error", "Patient not found for this ward or invalid login"));
@@ -73,24 +71,7 @@ public class PatientController {
     }
 
     /**
-     * UC12 – Adds a restriction to a patient's restriction list.
-     *
-     * @param id       the patient's ID
-     * @param request  contains the restriction string that should be added
-     * @return updated patient meal information
-     */
-    @PostMapping("/{id}/restrictions/add")
-    public ResponseEntity<PatientMealDTO> addRestriction(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
-
-        String restriction = request.get("restriction");
-        Patient updated = patientService.addRestriction(id, restriction);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
-    }
-
-    /**
-     * Adds a restriction and reassigns the patient's food type if a conflict arises.
+     * UC3 - Adds a restriction and reassigns the patient's food type if a conflict arises.
      *
      * @param id       the patient's ID
      * @param request  contains the restriction that should be added
@@ -108,6 +89,22 @@ public class PatientController {
 
         RestrictionUpdateResultDTO result = patientService.addRestrictionAndReassignFoodType(id, restriction);
         return ResponseEntity.ok(result);
+    }
+
+    /**
+     * UC12 – Add a single restriction string to the patient's restriction list.
+     * Example request:
+     *   POST /patients/3/restrictions/add
+     *   { "restriction": "ig3" }
+     */
+    @PostMapping("/{id}/restrictions/add")
+    public ResponseEntity<PatientMealDTO> addRestriction(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+
+        String restriction = request.get("restriction");
+        Patient updated = patientService.addRestriction(id, restriction);
+        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
     }
 
     /**
@@ -140,7 +137,7 @@ public class PatientController {
     }
 
     /**
-     * Adds an allergy to a patient's allergy list.
+     * UC 3 - Adds an allergy to a patient's allergy list and reasings the diet for one spesifc meal if conflict.
      *
      * @param id       the patient's ID
      * @param request  contains the allergy string that should be added
@@ -186,7 +183,7 @@ public class PatientController {
     }
 
     /**
-     * UC3 – Manually changes the next meal's food type for a patient.
+     * Manually changes the next meal's food type for a patient.
      *
      * @param patientId the patient's ID
      * @param request   contains the new food type
@@ -218,18 +215,16 @@ public class PatientController {
             return ResponseEntity.badRequest().body("Missing foodType");
         }
 
-        boolean ok = patientService.orderFood(id, foodType);
-        if (ok) {
-            return ResponseEntity.ok(
-                    java.util.Map.of(
-                            "message", "Order has been made",
-                            "patientId", id,
-                            "foodType", body.get("foodType")
-                    )
-            );
-        }
+        // Call the service method
+        MealOrder order = mealOrderService.orderFoodTypeForPatient(id, foodType);
 
-        return ResponseEntity.badRequest().body("Order failed");
+        return ResponseEntity.ok(Map.of(
+                "message", "Order logged and sent to kitchen",
+                "patientId", id,
+                "mealType", order.getMealType(),
+                "foodType", order.getFoodType().getTypeName(),
+                "status", order.getStatus()
+        ));
     }
 }
 

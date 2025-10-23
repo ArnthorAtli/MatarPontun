@@ -1,17 +1,12 @@
 package is.hi.matarpontun.controller;
 
-import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.WardDTO;
-import is.hi.matarpontun.dto.WardSummaryDTO;
-import is.hi.matarpontun.dto.WardUpdateDTO;
+import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityNotFoundException;
 
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -61,12 +56,6 @@ public class WardController {
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
     }
 
-    // (Admin/debug helper only)
-    @GetMapping("/all-data")
-    public List<Ward> getAllData() {
-        return wardService.findAllWards();
-    }
-
     // UC6 – Modify account information
     @PutMapping("/{id}")
     public ResponseEntity<WardDTO> updateWard(
@@ -77,23 +66,16 @@ public class WardController {
         return ResponseEntity.ok(new WardDTO(updated.getId(), updated.getWardName(), null));
     }
 
-    //UC2 - Order meal at mealtime
-    @GetMapping("/{wardId}/order")
-    public ResponseEntity<?> orderMealsForWard(@PathVariable Long wardId) {
-        List<PatientMealDTO> patients = wardService.generateMealOrdersForWard(wardId);
+    //UC2 - Order meal at mealtime, vil ekki telja ef ekkert pantað fyrir sjúklinginn?
+    @PostMapping("/{id}/order")
+    public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
+        OrderDTO order = wardService.generateMealOrdersForWard(id); // hér fer pöntunin fram
 
-        if (patients.isEmpty()) {
-            return ResponseEntity.ok(Map.of(
-                    "message", "No meals were ordered. Possibly no suitable meals found for this ward."
-            ));
-        }
-
-        Map<String, Object> response = new LinkedHashMap<>(); // preserves key order
-        response.put("message", "Meal orders successfully created and logged.");
-        response.put("totalPatients", patients.size());
-        response.put("patients", patients);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of(
+                "message", "Meal orders successfully created and logged.",
+                "ward", order.wardName(),
+                "rooms", order.rooms()
+        ));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

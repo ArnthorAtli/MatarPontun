@@ -1,13 +1,12 @@
 package is.hi.matarpontun.service;
 
-import is.hi.matarpontun.dto.PatientMealDTO;
-import is.hi.matarpontun.dto.WardFullDTO;
-import is.hi.matarpontun.dto.WardUpdateDTO;
+import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
-import is.hi.matarpontun.dto.WardSummaryDTO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -15,6 +14,8 @@ import java.util.Optional;
 
 @Service
 public class WardService {
+
+    protected static final Logger log = LoggerFactory.getLogger(WardService.class);
 
     private final WardRepository wardRepository;
     private final MealOrderService mealOrderService;
@@ -32,6 +33,17 @@ public class WardService {
         this.patientService = patientService;
         this.roomRepository = roomRepository;
         this.patientRepository = patientRepository;
+    }
+
+    // UC2 - Generate meal orders for this ward and return grouped summary
+    // Responsible for what to order (ward selection), not how to order.
+    // vil bæta við log: log.info("Generating meal orders for ward: {}", ward.getWardName());
+    public OrderDTO generateMealOrdersForWard(Long wardId) {
+        Ward ward = wardRepository.findById(wardId)
+                .orElseThrow(() -> new EntityNotFoundException("Ward not found: " + wardId));
+
+        log.info("Generating meal orders for ward: {}", ward.getWardName());
+        return mealOrderService.generateOrdersForWard(ward);
     }
 
     public Ward createWard(Ward ward) {
@@ -64,6 +76,7 @@ public class WardService {
     }
 
     // UC6: update ward
+    @Transactional
     public Ward updateWard(Long id, WardUpdateDTO req) {
         Ward ward = wardRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found"));
@@ -83,19 +96,6 @@ public class WardService {
 
         ward.setPassword(req.password());
         return wardRepository.save(ward);
-    }
-
-    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this ward
-    public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
-        Ward ward = wardRepository.findById(wardId)
-                .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
-        // Persist orders internally (system logs and kitchen)
-        mealOrderService.generateOrdersForPatients(ward.getPatients());
-
-        // Return clean DTOs for ward staff review
-        return ward.getPatients().stream()
-                .map(patientService::mapToPatientMealDTO)
-                .toList();
     }
 
     // UC16 – Get summary for a single ward by ID
@@ -124,3 +124,4 @@ public class WardService {
         return new WardFullDTO(ward.getWardName(), patientDTOs);
     }
 }
+
