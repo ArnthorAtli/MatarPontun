@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -108,11 +109,33 @@ public class PatientService {
     //  Shared dietary conflict logic (UC2 + UC3)
     public boolean checkMealForConflicts(Meal meal, Patient patient) {
         if (meal == null || meal.getIngredients() == null) return false;
+
+        // Split ingredients into tokens (remove spaces)
+        List<String> mealIngredients = Arrays.stream(meal.getIngredients().split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .toList();
+
+        for (String r : patient.getRestriction()) {
+            if (mealIngredients.contains(r.toLowerCase().trim())) {
+                return true;
+            }
+        }
+        for (String a : patient.getAllergies()) {
+            if (mealIngredients.contains(a.toLowerCase().trim())) {
+                return true;
+            }
+        }
+        return false;
+
+        /*
         String ingredients = meal.getIngredients().toLowerCase();
 
         return Stream.concat(patient.getRestriction().stream(), patient.getAllergies().stream())
                 .map(String::toLowerCase)
                 .anyMatch(ingredients::contains);
+
+         */
     }
 
     public Optional<Patient> findById(Long patientID) {
