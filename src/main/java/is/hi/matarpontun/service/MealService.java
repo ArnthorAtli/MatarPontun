@@ -23,7 +23,7 @@ public class MealService {
     /**
      * Selects the correct meal for a given patient based on current time and their FoodType's menu.
      */
-    //á eftir að setja limit á allergiis eða restriction
+    //á eftir að setja limit á allergies eða restriction
     public Meal selectMealForPatient(Patient patient) {
         if (patient == null || patient.getFoodType() == null) {
             return null;

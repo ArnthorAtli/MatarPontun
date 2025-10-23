@@ -56,7 +56,13 @@ public class WardController {
                 .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid ward name or password")));
     }
 
-    // UC6 – Modify account information
+    /**
+     * UC6 – Updates information for an existing ward.
+     *
+     * @param id the identifier of the ward
+     * @param request update request containing the new data (e.g., name, password)
+     * @return 200 OK with the updated information
+     */
     @PutMapping("/{id}")
     public ResponseEntity<WardDTO> updateWard(
             @PathVariable Long id,
@@ -67,6 +73,12 @@ public class WardController {
     }
 
     //UC2 - Order meal at mealtime, vil ekki telja ef ekkert pantað fyrir sjúklinginn?
+    /**
+     * UC2 – Places meal orders for all patients in the given ward at mealtime.
+     *
+     * @param id the ward's unique identifier
+     * @return 200 OK with a JSON object containing confirmation message, ward name and room information
+     */
     @PostMapping("/{id}/order")
     public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
         OrderDTO order = wardService.generateMealOrdersForWard(id); // hér fer pöntunin fram
@@ -89,7 +101,12 @@ public class WardController {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 
-    // UC16 – Fetch summary for a single ward (GET)
+    /**
+     * UC16 – Fetches a summary for a specific ward.
+     *
+     * @param wardId the ID of the ward
+     * @return 200 OK with information about the ward, or 404 Not Found if the ward does not exist
+     */
     @GetMapping("/summary/{wardId}")
     public ResponseEntity<?> getWardSummary(@PathVariable Long wardId) {
         try {
