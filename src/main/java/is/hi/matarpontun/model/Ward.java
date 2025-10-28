@@ -68,4 +68,15 @@ public class Ward {
     
     public List<Room> getRooms() { return rooms; }
     public void setRooms(List<Room> rooms) { this.rooms = rooms; }
+
+    public void addPatient(Patient p) {
+        patients.add(p);
+        p.setWard(this);
+    }
+
+    public void addRoom(Room r) {
+        rooms.add(r);
+        r.setWard(this);
+    }
+
 }

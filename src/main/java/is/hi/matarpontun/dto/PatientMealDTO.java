@@ -17,3 +17,4 @@ public record PatientMealDTO(
         List<String> restrictions,
         List<String> allergies
 ) {}
+

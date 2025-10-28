@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findByPatientID(Long patientID);
     List<Patient> findByRoom(Room room);
+    long countByWard_Id(Long wardId);
 }

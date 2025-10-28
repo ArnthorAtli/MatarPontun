@@ -6,7 +6,10 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "rooms")
+@Table(
+        name = "rooms",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"ward_id", "room_number"})
+)
 public class Room {
 
     @Id
@@ -41,4 +44,10 @@ public class Room {
     public void setWard(Ward ward) { this.ward = ward; }
     public List<Patient> getPatients() { return patients; }
     public void setPatients(List<Patient> patients) { this.patients = patients; }
+
+    public void addPatient(Patient patient) {
+        patients.add(patient);
+        patient.setRoom(this);
+    }
+
 }
