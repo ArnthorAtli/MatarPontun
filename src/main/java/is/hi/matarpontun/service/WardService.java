@@ -5,8 +5,12 @@ import is.hi.matarpontun.dto.WardFullDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.*;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,11 +21,18 @@ public class WardService {
     private final WardRepository wardRepository;
     private final MealOrderService mealOrderService;
     private final PatientService patientService;
+    private final RoomRepository roomRepository;
+    private final PatientRepository patientRepository;
+    @Autowired
+    private JdbcTemplate jdbcTemplate; // for resetting sequences
 
-    public WardService(WardRepository wardRepository, MealOrderService mealOrderService, PatientService patientService) {
+    public WardService(WardRepository wardRepository, MealOrderService mealOrderService, PatientService patientService,
+            RoomRepository roomRepository, PatientRepository patientRepository) {
         this.wardRepository = wardRepository;
         this.mealOrderService = mealOrderService;
         this.patientService = patientService;
+        this.roomRepository = roomRepository;
+        this.patientRepository = patientRepository;
     }
 
     public Ward createWard(Ward ward) {
@@ -30,7 +41,7 @@ public class WardService {
             // If it exists, throw an exception with a clear message
             throw new IllegalArgumentException("A ward with the name '" + ward.getWardName() + "' already exists.");
         }
-        
+
         return wardRepository.save(ward);
     }
 
@@ -75,7 +86,8 @@ public class WardService {
         return wardRepository.save(ward);
     }
 
-    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this ward
+    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this
+    // ward
     public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
@@ -87,6 +99,25 @@ public class WardService {
                 .map(patientService::mapToPatientMealDTO)
                 .toList();
     }
+
+    @Transactional
+    public void deleteWardCascade(Long wardId) {
+        Ward ward = wardRepository.findById(wardId)
+                .orElseThrow(() -> new EntityNotFoundException("Ward not found with ID: " + wardId));
+
+        // Delete all patients in all rooms of the ward
+        for (Room room : ward.getRooms()) {
+            patientRepository.deleteAll(room.getPatients());
+        }
+
+        // Delete all rooms in the ward
+        roomRepository.deleteAll(ward.getRooms());
+
+        // Delete the ward itself
+        wardRepository.delete(ward);
+
+    }
+
 
     // --------------------- Private Helpers ---------------------
     private WardFullDTO mapToWardFullDTO(Ward ward) {
