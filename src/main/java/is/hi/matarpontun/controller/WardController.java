@@ -1,23 +1,29 @@
 package is.hi.matarpontun.controller;
 
+import is.hi.matarpontun.dto.PatientMealDTO;
+import is.hi.matarpontun.dto.WardCreateRequestDTO;
+import is.hi.matarpontun.dto.WardDTO;
+import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.service.WardService;
+import is.hi.matarpontun.service.RoomService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/wards")
 public class WardController {
 
     private final WardService wardService;
+    private final RoomService roomService;
 
-    public WardController(WardService wardService) {
+    public WardController(WardService wardService, RoomService roomService) {
         this.wardService = wardService;
+        this.roomService = roomService;
     }
 
     /**
@@ -87,6 +93,48 @@ public class WardController {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
+    }
+
+    // UC15 Create a ward with rooms and patients in one request
+    @PostMapping("/createFullWard")
+    public ResponseEntity<?> createFullWard(@RequestBody WardCreateRequestDTO request) {
+        // Create the ward first
+        Ward savedWard = wardService.createWard(new Ward(request.wardName(), request.password()));
+
+        // Create rooms + patients
+        int numberOfRooms = request.numberOfRooms();
+        int patientsPerRoom = request.patientsPerRoom();
+
+        for (int i = 1; i <= numberOfRooms; i++) {
+            String roomNumber = "Room-" + (savedWard.getId() * 100 + i);
+            roomService.createRoomAndFillWithPatients(patientsPerRoom, savedWard.getId(), roomNumber);
+        }
+
+        // Build response
+        return ResponseEntity.ok(Map.of(
+                "message", "Ward created successfully with rooms and patients.",
+                "wardId", savedWard.getId(),
+                "wardName", savedWard.getWardName(),
+                "roomsCreated", numberOfRooms,
+                "patientsPerRoom", patientsPerRoom));
+    }
+
+    // UC17: Delete a ward along with all its rooms and patients
+    @DeleteMapping("/{wardId}")
+    public ResponseEntity<?> deleteWard(@PathVariable Long wardId) {
+        wardService.deleteWardCascade(wardId);
+        return ResponseEntity.ok(Map.of("message", "Ward and all associated rooms and patients deleted successfully."));
+    }
+
+    // UC18: Delete a room along with all its patients
+    @DeleteMapping("/rooms/{roomId}")
+    public ResponseEntity<?> deleteRoom(@PathVariable Long roomId) {
+        try {
+            Map<String, Object> result = roomService.deleteRoomAndPatients(roomId);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
+        }
     }
 
     // UC16 – Fetch summary for a single ward (GET)
