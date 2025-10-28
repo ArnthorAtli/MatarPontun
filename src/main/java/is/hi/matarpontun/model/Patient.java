@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * The Patient entity represents a hospital patient in the MatarPöntun system.

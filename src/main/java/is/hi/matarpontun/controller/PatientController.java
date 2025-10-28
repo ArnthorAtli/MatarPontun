@@ -6,7 +6,6 @@ import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.service.MealOrderService;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

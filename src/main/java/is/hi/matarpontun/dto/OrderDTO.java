@@ -1,6 +1,5 @@
 package is.hi.matarpontun.dto;
 
-import is.hi.matarpontun.model.Meal;
 
 import java.util.List;
 

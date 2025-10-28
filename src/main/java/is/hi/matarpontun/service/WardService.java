@@ -4,15 +4,11 @@ import is.hi.matarpontun.dto.*;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -102,16 +98,8 @@ public class WardService {
         ward.setPassword(req.password());
         return wardRepository.save(ward);
     }
-
-    // UC2 - Order food at mealtime -> Generate and return patient DTOs for this
-    // ward
-    public List<PatientMealDTO> generateMealOrdersForWard(Long wardId) {
-        Ward ward = wardRepository.findById(wardId)
-                .orElseThrow(() -> new IllegalArgumentException("Ward not found"));
-        // Persist orders internally (system logs and kitchen)
-        mealOrderService.generateOrdersForPatients(ward.getPatients());
     // UC16 – Get summary for a single ward by ID
-    @Transactional(readOnly = true)
+    @Transactional
     public WardSummaryDTO getWardSummaryById(Long wardId) {
         var ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found"));

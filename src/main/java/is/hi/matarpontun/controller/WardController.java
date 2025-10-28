@@ -1,6 +1,5 @@
 package is.hi.matarpontun.controller;
 
-import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.dto.WardCreateRequestDTO;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
