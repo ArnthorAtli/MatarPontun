@@ -1,9 +1,14 @@
 package is.hi.matarpontun.service;
 
+import is.hi.matarpontun.dto.MealDTO;
+import is.hi.matarpontun.model.FoodType;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MealRepository;
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,15 +20,22 @@ public class MealService {
 
     @Autowired
     private MealRepository mealRepository;
+    private final FoodTypeRepository foodTypeRepository;
+
+    public MealService(MealRepository mealRepository, FoodTypeRepository foodTypeRepository) {
+        this.mealRepository = mealRepository;
+        this.foodTypeRepository = foodTypeRepository;
+    }
 
     public List<Meal> findAllMeals() {
         return mealRepository.findAll();
     }
 
     /**
-     * Selects the correct meal for a given patient based on current time and their FoodType's menu.
+     * Selects the correct meal for a given patient based on current time and their
+     * FoodType's menu.
      */
-    //á eftir að setja limit á allergies eða restriction
+    // á eftir að setja limit á allergiis eða restriction
     public Meal selectMealForPatient(Patient patient) {
         if (patient == null || patient.getFoodType() == null) {
             return null;
@@ -51,4 +63,31 @@ public class MealService {
             return menu.getNightSnack();
         }
     }
+
+    public Meal createMeal(MealDTO dto) {
+        FoodType foodType = foodTypeRepository.findById(dto.foodTypeId())
+                .orElseThrow(() -> new EntityNotFoundException("FoodType not found with ID: " + dto.foodTypeId()));
+
+        Meal meal = new Meal(dto.name(), dto.ingredients(), dto.category(), foodType);
+        return mealRepository.save(meal);
+    }
+
+    public Meal modifyMealIngredients(Long mealId, String newIngredients) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new EntityNotFoundException("Meal not found with ID: " + mealId));
+
+        meal.setIngredients(newIngredients);
+        return mealRepository.save(meal);
+    }
+
+    public Meal modifyMealName(Long mealId, String newName) {
+        Meal meal = mealRepository.findById(mealId)
+                .orElseThrow(() -> new EntityNotFoundException("Meal not found with ID: " + mealId));
+
+        meal.setName(newName);
+        return mealRepository.save(meal);
+    }
+
+    
+
 }

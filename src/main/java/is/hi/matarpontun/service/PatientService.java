@@ -7,6 +7,7 @@ import is.hi.matarpontun.model.FoodType;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
+import is.hi.matarpontun.model.Room;
 import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
@@ -19,6 +20,7 @@ import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Stream;
 
 @Service
@@ -250,6 +252,35 @@ public class PatientService {
                 menu.getNightSnack() != null ? menu.getNightSnack().getName() : null
         );
     }
+
+
+
+    public Patient createRandomPatient(Room room) {
+    Random random = new Random();
+
+    // Generate name like "Patient_1234"
+    String name = "Patient_" + (1000 + random.nextInt(9000));
+
+    // Generate random age between 10–70
+    int age = 10 + random.nextInt(61);
+
+    // Determine bed number
+    int bedNumber = 1;
+    if (room.getPatients() != null && !room.getPatients().isEmpty()) {
+        bedNumber = room.getPatients().size() + 1;
+    }
+
+    // Create patient
+    Patient patient = new Patient();
+    patient.setName(name);
+    patient.setAge(age);
+    patient.setBedNumber(bedNumber);
+    patient.setRoom(room);
+    patient.setWard(room.getWard());
+
+    // Save and return
+    return patientRepository.save(patient);
+}
 }
 
 
