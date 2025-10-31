@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
 public class DailyOrderService {
 
@@ -102,7 +101,7 @@ public class DailyOrderService {
                 try {
                     DailyOrder order = orderFoodTypeForPatient(id);
 
-                    //Map to DTO info
+                    // Map to DTO info
                     patientInfos.add(new OrderDTO.PatientInfo(
                             patient.getName(),
                             order.getFoodType() != null ? order.getFoodType().getTypeName() : "",
@@ -296,6 +295,11 @@ public class DailyOrderService {
         System.out.println(
                 "No safe alternative found for " + currentTypeName + " " + category + " → manual change required.");
         return null;
+    }
+
+    // Finds today's order for a patient, if any
+    public DailyOrder findTodayOrderForPatient(Patient patient) {
+        return dailyOrderRepository.findByPatientAndOrderDate(patient, LocalDate.now()).orElseGet(() -> orderFoodTypeForPatient(patient.getPatientID()));
     }
 
 }

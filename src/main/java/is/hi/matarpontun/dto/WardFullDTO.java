@@ -1,6 +1,21 @@
 package is.hi.matarpontun.dto;
-// is the “big picture” version of a ward, so it should expose everything relevant for UC8/UC11 (fetch all data for a ward), but without leaking sensitive stuff (like passwords).
 
 import java.util.List;
 
-public record WardFullDTO(String wardName, List<PatientMealDTO> patients) {}
+public class WardFullDTO {
+    private String wardName;
+    private List<PatientDailyOrderDTO> patients;
+
+    public WardFullDTO(String wardName, List<PatientDailyOrderDTO> patients) {
+        this.wardName = wardName;
+        this.patients = patients;
+    }
+
+    public String getWardName() {
+        return wardName;
+    }
+
+    public List<PatientDailyOrderDTO> getPatients() {
+        return patients;
+    }
+}

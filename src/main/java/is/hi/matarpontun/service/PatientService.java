@@ -1,22 +1,15 @@
 package is.hi.matarpontun.service;
 
-import is.hi.matarpontun.dto.MenuOfTheDayDTO;
-import is.hi.matarpontun.dto.PatientMealDTO;
 import is.hi.matarpontun.model.FoodType;
 import is.hi.matarpontun.model.Meal;
-import is.hi.matarpontun.model.Menu;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.model.Room;
 import is.hi.matarpontun.repository.FoodTypeRepository;
-import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.repository.PatientRepository;
-import is.hi.matarpontun.util.MealPeriod;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -27,15 +20,11 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
-    private final MenuRepository menuRepository;
     
 
-    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository,
-            MenuRepository menuRepository) {
+    public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
-        this.menuRepository = menuRepository;
-        
     }
 
     // Helper method to check a meal against all of a patient's restrictions and
@@ -154,45 +143,6 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    // tekur inn patient og nær í FoodType fyrir hann. Núllstillir menum ef hann
-    // hefur FoodType skráða og finnur skráðan matseðil fyrir þann dag og náum í
-    // næstu máltíð.
-    // skilar svo Patient með matseðli dagsins í DTO
-    public PatientMealDTO mapToPatientMealDTO(Patient patient) {
-        var foodType = patient.getFoodType();
-        Menu menu = (foodType != null)
-                ? menuRepository.findByFoodTypeAndDate(foodType, LocalDate.now()).orElse(null)
-                : null;
-
-        Meal nextMeal = (menu != null)
-                ? MealPeriod.current(LocalTime.now()).getMealFromMenu(menu)
-                : null;
-
-        MenuOfTheDayDTO menuDTO = (menu != null) ? mapToMenuOfTheDayDTO(menu) : null;
-
-        return new PatientMealDTO(
-                patient.getPatientID(),
-                patient.getName(),
-                patient.getAge(),
-                patient.getRoom().getRoomNumber(),
-                patient.getBedNumber(),
-                (foodType != null) ? foodType.getTypeName() : null,
-                nextMeal,
-                menuDTO,
-                patient.getRestriction(),
-                patient.getAllergies());
-    }
-
-    private MenuOfTheDayDTO mapToMenuOfTheDayDTO(Menu menu) {
-        return new MenuOfTheDayDTO(
-                menu.getDate(),
-                menu.getBreakfast() != null ? menu.getBreakfast().getName() : null,
-                menu.getLunch() != null ? menu.getLunch().getName() : null,
-                menu.getAfternoonSnack() != null ? menu.getAfternoonSnack().getName() : null,
-                menu.getDinner() != null ? menu.getDinner().getName() : null,
-                menu.getNightSnack() != null ? menu.getNightSnack().getName() : null);
-    }
-
     public Patient createRandomPatient(Room room) {
         Random random = new Random();
 
@@ -233,4 +183,6 @@ public class PatientService {
         patient.setFoodType(newFoodType);
         return patientRepository.save(patient);
     }
+
+    
 }
