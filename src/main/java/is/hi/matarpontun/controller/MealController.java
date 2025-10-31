@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import is.hi.matarpontun.repository.MealRepository;
 import is.hi.matarpontun.repository.MenuRepository;
+import is.hi.matarpontun.service.MenuService;
 import java.util.Map;
 import java.util.List;
 
@@ -18,11 +19,14 @@ public class MealController {
     private final MealService mealService;
     private final MealRepository mealRepository;
     private final MenuRepository menuRepository;
+    private final MenuService menuService;
 
-    public MealController(MealService mealService, MealRepository mealRepository, MenuRepository menuRepository) {
+    public MealController(MealService mealService, MealRepository mealRepository, MenuRepository menuRepository,
+            MenuService menuService) {
         this.mealService = mealService;
         this.mealRepository = mealRepository;
         this.menuRepository = menuRepository;
+        this.menuService = menuService;
     }
 
     // UC21 - Create new meal
@@ -90,4 +94,41 @@ public class MealController {
         return ResponseEntity.ok(Map.of(
                 "message", "Meal with ID " + mealId + " deleted successfully."));
     }
+
+    /**
+     * POST /meals/createMenu
+     * Body: { "daysInTheFuture": 2 }
+     *
+     * Creates one random menu for each food type for the target date.
+     */
+    @PostMapping("/createMenu")
+    public ResponseEntity<String> createMenuForFutureDay(@RequestBody MenuRequest request) {
+        String result = menuService.createMenusForFutureDay(request.getDaysInTheFuture());
+        return ResponseEntity.ok(result);
+    }
+
+    // Simple DTO for Postman body
+    public static class MenuRequest {
+        private int daysInTheFuture;
+
+        public int getDaysInTheFuture() {
+            return daysInTheFuture;
+        }
+
+        public void setDaysInTheFuture(int daysInTheFuture) {
+            this.daysInTheFuture = daysInTheFuture;
+        }
+    }
+
+    //assign menu of the day to each food type
+    @PutMapping("/assignMenuOfTheDay")
+    public ResponseEntity<?> assignMenuOfTheDay() {
+        try {
+            menuService.assignMenuOfTheDay();
+            return ResponseEntity.ok(Map.of("message", "Menus of the day successfully assigned to each FoodType"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
 }

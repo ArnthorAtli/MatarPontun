@@ -16,7 +16,6 @@ public class FoodType {
     private String typeName; // e.g. "A1" -> vil rename to "lable"
     private String description; // e.g. "Almennt fæði"
 
-    // One food type can have many menus (e.g. one per day)
     @OneToMany(mappedBy = "foodType", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Menu> menus = new ArrayList<>();
 

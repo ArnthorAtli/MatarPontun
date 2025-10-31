@@ -19,18 +19,18 @@ public class WardService {
     protected static final Logger log = LoggerFactory.getLogger(WardService.class);
 
     private final WardRepository wardRepository;
-    private final MealOrderService mealOrderService;
+    private final DailyOrderService dailyOrderService;
     private final PatientService patientService;
     private final RoomRepository roomRepository;
     private final PatientRepository patientRepository;
 
     public WardService(WardRepository wardRepository,
-                       MealOrderService mealOrderService,
+                       DailyOrderService dailyOrderService,
                        PatientService patientService,
                        RoomRepository roomRepository,
                        PatientRepository patientRepository) {
         this.wardRepository = wardRepository;
-        this.mealOrderService = mealOrderService;
+        this.dailyOrderService = dailyOrderService;
         this.patientService = patientService;
         this.roomRepository = roomRepository;
         this.patientRepository = patientRepository;
@@ -39,12 +39,12 @@ public class WardService {
     // UC2 - Generate meal orders for this ward and return grouped summary
     // Responsible for what to order (ward selection), not how to order.
     // vil bæta við log: log.info("Generating meal orders for ward: {}", ward.getWardName());
-    public OrderDTO generateMealOrdersForWard(Long wardId) {
+    public OrderDTO generateDailyOrdersForWard(Long wardId) {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found: " + wardId));
 
-        log.info("Generating meal orders for ward: {}", ward.getWardName());
-        return mealOrderService.generateOrdersForWard(ward);
+        log.info("Generating daily orders for ward: {}", ward.getWardName());
+        return dailyOrderService.generateOrdersForWard(ward);
     }
 
     public Ward createWard(Ward ward) {
