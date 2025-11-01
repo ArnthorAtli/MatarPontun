@@ -77,19 +77,19 @@ public class WardController {
         return ResponseEntity.ok(new WardDTO(updated.getId(), updated.getWardName(), null));
     }
 
-    //UC2 - Order meal at mealtime, vil ekki telja ef ekkert pantað fyrir sjúklinginn?
+    
     /**
-     * UC2 – Places meal orders for all patients in the given ward at mealtime.
+     * UC2 – Places daily orders for all patients in the given ward.
      *
      * @param id the ward's unique identifier
      * @return 200 OK with a JSON object containing confirmation message, ward name and room information
      */
     @PostMapping("/{id}/order")
     public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
-        OrderDTO order = wardService.generateMealOrdersForWard(id); // hér fer pöntunin fram
+        OrderDTO order = wardService.generateDailyOrdersForWard(id); // hér fer pöntunin fram
 
         return ResponseEntity.ok(Map.of(
-                "message", "Meal orders successfully created and logged.",
+                "message", "Daily orders successfully created and logged.",
                 "ward", order.wardName(),
                 "rooms", order.rooms()
         ));
@@ -105,7 +105,6 @@ public class WardController {
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
-
    
     // UC15 Create a ward with rooms and patients in one request
     @PostMapping("/createFullWard")

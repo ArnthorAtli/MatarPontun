@@ -15,6 +15,14 @@ public record OrderDTO (
     public record PatientInfo(
             String name,
             String foodType,
-            String nextMeal
+            MealPlan meals
+    ) {}
+
+     public record MealPlan(
+            String breakfast,
+            String lunch,
+            String afternoonSnack,
+            String dinner,
+            String nightSnack
     ) {}
 }

@@ -1,9 +1,9 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.*;
-import is.hi.matarpontun.model.MealOrder;
+import is.hi.matarpontun.model.DailyOrder;
 import is.hi.matarpontun.model.Patient;
-import is.hi.matarpontun.service.MealOrderService;
+import is.hi.matarpontun.service.DailyOrderService;
 import is.hi.matarpontun.service.PatientService;
 import is.hi.matarpontun.service.WardService;
 import org.springframework.http.ResponseEntity;
@@ -17,20 +17,17 @@ public class PatientController {
 
     private final WardService wardService;
     private final PatientService patientService;
-    private final MealOrderService mealOrderService;
+    private final DailyOrderService dailyOrderService;
 
-    // depends á WardService því viljum að aðeins logged-in wards geti nálgast uppls.
-    public PatientController(WardService wardService, PatientService patientService, MealOrderService mealOrderService) {
+    // depends á WardService því viljum að aðeins logged-in wards geti nálgast
+    // uppls.
+    public PatientController(WardService wardService, PatientService patientService,
+            DailyOrderService dailyOrderService) {
         this.wardService = wardService;
         this.patientService = patientService;
-        this.mealOrderService = mealOrderService;
+        this.dailyOrderService = dailyOrderService;
     }
 
-    // UC8 - to fetch patients for a ward
-    // For now, we identify the ward by asking for wardName + password again in the request.
-    // Later, when we add tokens (e.g. JWT), this controller method will stay almost identical.
-    // The only difference is: instead of @RequestParam wardName/password,
-    // we will look up the ward based on the token in the Authorization header.
     /**
      * UC8 – Retrieves all patients for a specific ward.
      *
@@ -39,7 +36,7 @@ public class PatientController {
      */
     @GetMapping("/all")
     public ResponseEntity<?> getAllPatientsForWard(@RequestBody WardDTO request) {
-        var wardPatientsInfo =  wardService.signInAndGetData(request.wardName(), request.password());
+        var wardPatientsInfo = wardService.signInAndGetData(request.wardName(), request.password());
 
         if (wardPatientsInfo.isPresent()) {
             return ResponseEntity.ok(wardPatientsInfo.get());
@@ -58,7 +55,7 @@ public class PatientController {
      */
     @GetMapping("{id}")
     public ResponseEntity<?> getPatientByIdForWard(@RequestBody WardDTO request,
-                                                   @PathVariable Long id) {
+            @PathVariable Long id) {
         var patientInfo = wardService.signInAndGetPatientData(request.wardName(), request.password(), id);
 
         if (patientInfo.isPresent()) {
@@ -70,57 +67,78 @@ public class PatientController {
     }
 
     /**
-     * UC3 - Adds a restriction and reassigns the patient's food type if a conflict arises.
+     * UC3 - Adds a restriction and reassigns the patient's food type if a conflict
+     * arises.
      *
-     * @param id       the patient's ID
-     * @param request  contains the restriction that should be added
+     * @param id      the patient's ID
+     * @param request contains the restriction that should be added
      * @return a result DTO describing whether a reassignment was needed
      */
     @PostMapping("/{id}/restrictions/addAndReassign")
-    public ResponseEntity<RestrictionUpdateResultDTO> addRestrictionAndReassign(
+    public ResponseEntity<?> addRestrictionAndReassign(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
 
         String restriction = request.get("restriction");
         if (restriction == null || restriction.isBlank()) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing restriction"));
         }
 
-        RestrictionUpdateResultDTO result = patientService.addRestrictionAndReassignFoodType(id, restriction);
-        return ResponseEntity.ok(result);
+        // Add the restriction to the patient
+        Patient updated = patientService.addRestriction(id, restriction);
+
+        // Recheck today's daily order for conflicts
+        DailyOrder order = dailyOrderService.checkForConflicts(id);
+
+        // Return a detailed result
+        return ResponseEntity.ok(new RestrictionCheckResultDTO(
+                updated,
+                order,
+                "Restriction added and daily order rechecked."));
     }
 
     /**
      * UC12 – Add a single restriction string to the patient's restriction list.
      * Example request:
-     *   POST /patients/3/restrictions/add
-     *   { "restriction": "ig3" }
+     * POST /patients/3/restrictions/add
+     * { "restriction": "ig3" }
      */
     @PostMapping("/{id}/restrictions/add")
-    public ResponseEntity<PatientMealDTO> addRestriction(
+    public ResponseEntity<PatientDailyOrderDTO> addRestriction(
             @PathVariable Long id,
             @RequestBody Map<String, String> request) {
 
         String restriction = request.get("restriction");
-        Patient updated = patientService.addRestriction(id, restriction);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
+        Patient updatedPatient = patientService.addRestriction(id, restriction);
+        DailyOrder order = dailyOrderService.findTodayOrderForPatient(updatedPatient);
+
+        PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(
+                updatedPatient,
+                updatedPatient.getWard(),
+                order);
+
+        return ResponseEntity.ok(dto);
     }
 
     /**
      * Removes one or more restrictions from a patient.
      *
-     * @param id    the patient's ID
-     * @param body  contains a list of restrictions to remove
+     * @param id   the patient's ID
+     * @param body contains a list of restrictions to remove
      * @return updated patient meal information
      */
     @PatchMapping("/{id}/restrictions/remove")
-    public ResponseEntity<PatientMealDTO> removeRestrictions(
+    public ResponseEntity<PatientDailyOrderDTO> removeRestrictions(
             @PathVariable Long id,
             @RequestBody Map<String, java.util.List<String>> body) {
 
         java.util.List<String> toRemove = body.get("remove");
         Patient updated = patientService.removeRestrictions(id, toRemove);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
+
+        DailyOrder order = dailyOrderService.findTodayOrderForPatient(updated);
+        PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(updated, updated.getWard(), order);
+
+        return ResponseEntity.ok(dto);
     }
 
     /**
@@ -130,43 +148,34 @@ public class PatientController {
      * @return updated patient meal information
      */
     @DeleteMapping("/{id}/restrictions")
-    public ResponseEntity<PatientMealDTO> clearAllRestrictions(@PathVariable Long id) {
+    public ResponseEntity<PatientDailyOrderDTO> clearAllRestrictions(@PathVariable Long id) {
         Patient updated = patientService.clearAllRestrictions(id);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
-    }
 
-    /**
-     * UC 3 - Adds an allergy to a patient's allergy list and reasings the diet for one spesifc meal if conflict.
-     *
-     * @param id       the patient's ID
-     * @param request  contains the allergy string that should be added
-     * @return updated patient meal information
-     */
-    @PostMapping("/{id}/allergies/add")
-    public ResponseEntity<PatientMealDTO> addAllergy(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> request) {
+        DailyOrder order = dailyOrderService.findTodayOrderForPatient(updated);
+        PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(updated, updated.getWard(), order);
 
-        String allergy = request.get("allergy");
-        Patient updated = patientService.addAllergy(id, allergy);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
+        return ResponseEntity.ok(dto);
     }
 
     /**
      * Removes one or more allergies from a patient's allergy list.
      *
-     * @param id    the patient's ID
-     * @param body  contains a list of allergies that should be removed
+     * @param id   the patient's ID
+     * @param body contains a list of allergies that should be removed
      * @return updated patient meal information
      */
     @PatchMapping("/{id}/allergies/remove")
-    public ResponseEntity<PatientMealDTO> removeAllergy(
+    public ResponseEntity<PatientDailyOrderDTO> removeAllergy(
             @PathVariable Long id,
             @RequestBody Map<String, java.util.List<String>> body) {
 
         java.util.List<String> toRemove = body.get("remove");
         Patient updated = patientService.removeAllergies(id, toRemove);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
+
+        DailyOrder order = dailyOrderService.findTodayOrderForPatient(updated);
+        PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(updated, updated.getWard(), order);
+
+        return ResponseEntity.ok(dto);
     }
 
     /**
@@ -176,36 +185,22 @@ public class PatientController {
      * @return updated patient meal information
      */
     @DeleteMapping("/{id}/allergies")
-    public ResponseEntity<PatientMealDTO> clearAllAllergies(@PathVariable Long id) {
+    public ResponseEntity<PatientDailyOrderDTO> clearAllAllergies(@PathVariable Long id) {
         Patient updated = patientService.clearAllAllergies(id);
-        return ResponseEntity.ok(patientService.mapToPatientMealDTO(updated));
-    }
 
-    /**
-     * Manually changes the next meal's food type for a patient.
-     *
-     * @param patientId the patient's ID
-     * @param request   contains the new food type
-     * @return a confirmation message
-     */
-   @PatchMapping("/{id}/change-next-meal")
-    public ResponseEntity<?> changeNextMeal(
-            @PathVariable("id") Long patientId,
-            @RequestBody ManualFoodTypeChangeDTO request) {
+        DailyOrder order = dailyOrderService.findTodayOrderForPatient(updated);
+        PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(updated, updated.getWard(), order);
 
-        // Call the service method to perform the logic
-        String successMessage = mealOrderService.manuallyChangeNextMeal(patientId, request.newFoodTypeName());
-        // Return the success message from the service in a simple JSON object
-        return ResponseEntity.ok(Map.of("message", successMessage));
+        return ResponseEntity.ok(dto);
     }
 
     /**
      * UC1 – Orders a specific food type for a patient.
      *
-     * @param id    the patient's ID
-     * @param body  contains the chosen food type name
+     * @param id   the patient's ID
+     * @param body contains the chosen food type name
      * @return a success message if the order was made, the
-     * patient's ID and the food type, otherwise an error message
+     *         patient's ID and the food type, otherwise an error message
      */
     @PostMapping("{id}/order")
     public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id, @RequestBody Map<String, String> body) {
@@ -213,18 +208,62 @@ public class PatientController {
         if (foodType == null || foodType.isBlank()) {
             return ResponseEntity.badRequest().body("Missing foodType");
         }
+        // Update patient's food type using the service
+        patientService.updatePatientFoodType(id, foodType);
 
-        // Call the service method
-        MealOrder order = mealOrderService.orderFoodTypeForPatient(id, foodType);
+        // Order daily meals for the patient
+        DailyOrder order = dailyOrderService.orderFoodTypeForPatient(id);
 
         return ResponseEntity.ok(Map.of(
-                "message", "Order logged and sent to kitchen",
+                "message", "Daily order created for patient",
                 "patientId", id,
-                "mealType", order.getMealType(),
-                "foodType", order.getFoodType().getTypeName(),
-                "status", order.getStatus()
-        ));
+                "foodType", order.getFoodType() != null ? order.getFoodType().getTypeName() : "",
+                "orderDate", order.getOrderDate().toString(),
+                "meals", Map.of(
+                        "breakfast", order.getBreakfast() != null ? order.getBreakfast().getName() : "N/A",
+                        "lunch", order.getLunch() != null ? order.getLunch().getName() : "N/A",
+                        "afternoonSnack",
+                        order.getAfternoonSnack() != null ? order.getAfternoonSnack().getName() : "N/A",
+                        "dinner", order.getDinner() != null ? order.getDinner().getName() : "N/A",
+                        "nightSnack", order.getNightSnack() != null ? order.getNightSnack().getName() : "N/A"),
+                "status", order.getStatus()));
     }
+
+    /**
+     * UC14 – Fix conflicts in a patient's daily order.
+     * This checks the patient's order for any restriction conflicts
+     * and automatically replaces meals where possible.
+     * @param id the patient's ID
+     * @return the updated daily order and status message
+     */
+    @PatchMapping("/{id}/fixConflicts")
+    public ResponseEntity<?> fixConflicts(@PathVariable Long id) {
+        try {
+            DailyOrder updatedOrder = dailyOrderService.checkForConflicts(id);
+
+            String message;
+            switch (updatedOrder.getStatus()) {
+                case "AUTO CHANGED" -> message = "Conflicts found and meals automatically adjusted.";
+                case "NEEDS MANUAL CHANGE" -> message = "Conflicts found — manual change required.";
+                default -> message = "No conflicts found.";
+            }
+
+            // Build DTO for clean structured response
+            Patient patient = updatedOrder.getPatient();
+            PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(
+                    patient,
+                    patient.getWard(),
+                    updatedOrder);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", message,
+                    "status", updatedOrder.getStatus(),
+                    "data", dto));
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Unable to check conflicts: " + e.getMessage()));
+        }
+    }
+
 }
-
-
