@@ -4,13 +4,18 @@ import is.hi.matarpontun.dto.WardCreateRequestDTO;
 import is.hi.matarpontun.dto.WardDTO;
 import is.hi.matarpontun.dto.WardUpdateDTO;
 import is.hi.matarpontun.dto.*;
+import is.hi.matarpontun.model.DailyOrder;
 import is.hi.matarpontun.model.Ward;
+import is.hi.matarpontun.service.DailyOrderService;
 import is.hi.matarpontun.service.WardService;
 import is.hi.matarpontun.service.RoomService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityNotFoundException;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -19,10 +24,12 @@ public class WardController {
 
     private final WardService wardService;
     private final RoomService roomService;
+    private final DailyOrderService dailyOrderService;
 
-    public WardController(WardService wardService, RoomService roomService) {
+    public WardController(WardService wardService, RoomService roomService, DailyOrderService dailyOrderService) {
         this.wardService = wardService;
         this.roomService = roomService;
+        this.dailyOrderService = dailyOrderService;
     }
 
     /**
@@ -163,4 +170,45 @@ public class WardController {
             return ResponseEntity.status(404).body(Map.of("error", "Ward not found"));
         }
     }
+
+    // UC10 -  Fetch filtered data via query parameters (e.g. by-category, by-date) (GET)
+    @GetMapping("/{wardId}/orders")
+    public ResponseEntity<?> getFilteredOrdersForWard(
+            @PathVariable Long wardId,
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String foodType,
+            @RequestParam(required = false) String status) {
+
+        // Parse date
+        LocalDate parsedDate = null;
+        if (date != null && !date.isBlank()) {
+            try {
+                parsedDate = LocalDate.parse(date);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid date format. Use yyyy-MM-dd"));
+            }
+        }
+
+        // Fetch ward
+        Ward ward = wardService.findById(wardId);
+        String wardName = ward.getWardName();
+
+        // Fetch filtered orders via DTO method
+        List<DailyOrderSummaryDTO> filteredOrders = dailyOrderService.getFilteredOrdersDTO(parsedDate, foodType, wardName, status);
+
+        // Build response
+        Map<String, Object> filters = new HashMap<>();
+        filters.put("date", date);
+        filters.put("foodType", foodType);
+        filters.put("status", status);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("wardId", wardId);
+        response.put("wardName", wardName);
+        response.put("filters", filters);
+        response.put("orders", filteredOrders);
+
+        return ResponseEntity.ok(response);
+    }
+
 }
