@@ -124,8 +124,13 @@ public class WardService {
         wardRepository.delete(ward);
     }
 
-    // --------------------- Private Helpers ---------------------
+    public Ward findById(Long wardId) {
+        return wardRepository.findById(wardId)
+                .orElseThrow(() -> new EntityNotFoundException("Ward not found with ID: " + wardId));
+    }
 
+
+    // --------------------- Private Helpers ---------------------
     private WardFullDTO mapToWardFullDTO(Ward ward) {
         var patientDTOs = ward.getPatients().stream()
                 .map(patient -> {

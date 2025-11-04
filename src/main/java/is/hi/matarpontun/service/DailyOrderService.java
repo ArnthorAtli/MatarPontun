@@ -1,5 +1,6 @@
 package is.hi.matarpontun.service;
 
+import is.hi.matarpontun.dto.DailyOrderSummaryDTO;
 import is.hi.matarpontun.dto.OrderDTO;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.DailyOrderRepository;
@@ -302,4 +303,43 @@ public class DailyOrderService {
         return dailyOrderRepository.findByPatientAndOrderDate(patient, LocalDate.now()).orElseGet(() -> orderFoodTypeForPatient(patient.getPatientID()));
     }
 
+    // for uc10
+    public List<DailyOrder> getFilteredOrders(LocalDate date, String foodType, String wardName, String status) {
+
+        if (wardName != null && date != null && foodType != null && status != null) {
+            return dailyOrderRepository.findByWardNameAndOrderDateAndFoodType_TypeNameAndStatus(wardName, date, foodType, status);
+        } else if (wardName != null && date != null && status != null) {
+            return dailyOrderRepository.findByWardNameAndOrderDateAndStatus(wardName, date, status);
+        } else if (wardName != null && foodType != null && status != null) {
+            return dailyOrderRepository.findByWardNameAndFoodType_TypeNameAndStatus(wardName, foodType, status);
+        } else if (wardName != null && status != null) {
+            return dailyOrderRepository.findByWardNameAndStatus(wardName, status);
+        } else if (wardName != null && date != null && foodType != null) {
+            return dailyOrderRepository.findByWardNameAndOrderDateAndFoodType_TypeName(wardName, date, foodType);
+        } else if (wardName != null && date != null) {
+            return dailyOrderRepository.findByWardNameAndOrderDate(wardName, date);
+        } else if (wardName != null && foodType != null) {
+            return dailyOrderRepository.findByWardNameAndFoodType_TypeName(wardName, foodType);
+        } else if (wardName != null) {
+            return dailyOrderRepository.findByWardName(wardName);
+        } else {
+            return dailyOrderRepository.findAll();
+        }
+    }
+
+
+    public List<DailyOrderSummaryDTO> getFilteredOrdersDTO(LocalDate date, String foodType, String wardName, String status) {
+        List<DailyOrder> orders = getFilteredOrders(date, foodType, wardName, status);
+
+        return orders.stream()
+                .map(order -> new DailyOrderSummaryDTO(
+                        order.getId(),
+                        order.getOrderDate(),
+                        order.getWardName(),
+                        order.getRoomNumber(),
+                        order.getPatient() != null ? order.getPatient().getName() : "Unknown",
+                        order.getFoodType() != null ? order.getFoodType().getTypeName() : "N/A",
+                        order.getStatus()))
+                .toList();
+    }
 }
