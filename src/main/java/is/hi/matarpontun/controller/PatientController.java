@@ -233,6 +233,7 @@ public class PatientController {
      * UC14 – Fix conflicts in a patient's daily order.
      * This checks the patient's order for any restriction conflicts
      * and automatically replaces meals where possible.
+     * 
      * @param id the patient's ID
      * @return the updated daily order and status message
      */
@@ -263,6 +264,25 @@ public class PatientController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "Unable to check conflicts: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * UC13 – Ward staff deletes today’s order for one patient.
+     *
+     * @param id the patient's ID
+     * @return a success or error message based on whether an order was found and deleted
+     */
+    @DeleteMapping("/{id}/order/today")
+    public ResponseEntity<?> deleteTodaysOrder(@PathVariable Long id) {
+        boolean deleted = dailyOrderService.deleteTodaysOrderForPatient(id);
+
+        if (deleted) {
+            return ResponseEntity.ok(Map.of(
+                    "message", "Today's order deleted for patient ID " + id));
+        } else {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "No order found for patient ID " + id + " today"));
         }
     }
 

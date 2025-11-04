@@ -145,6 +145,24 @@ public class DailyOrderService {
         return meal != null ? meal.getName() : "N/A";
     }
 
+    // UC13 – Ward staff deletes today’s order for one patient
+    public boolean deleteTodaysOrderForPatient(Long patientId) {
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        LocalDate today = LocalDate.now();
+
+        Optional<DailyOrder> existingOrderOpt = dailyOrderRepository.findByPatientAndOrderDate(patient, today);
+
+        if (existingOrderOpt.isPresent()) {
+            dailyOrderRepository.delete(existingOrderOpt.get());
+            System.out.println("Deleted today's order for patient " + patient.getName());
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     // -----------------------HELPER FUNCTIONS-------------------------
 
     // Checks if any of the meals in the order conflict with patient's restrictions
@@ -300,14 +318,22 @@ public class DailyOrderService {
 
     // Finds today's order for a patient, if any
     public DailyOrder findTodayOrderForPatient(Patient patient) {
-        return dailyOrderRepository.findByPatientAndOrderDate(patient, LocalDate.now()).orElseGet(() -> orderFoodTypeForPatient(patient.getPatientID()));
+        return dailyOrderRepository.findByPatientAndOrderDate(patient, LocalDate.now())
+                .orElseGet(() -> {
+                    DailyOrder emptyOrder = new DailyOrder();
+                    emptyOrder.setPatient(patient);
+                    emptyOrder.setOrderDate(LocalDate.now());
+                    emptyOrder.setStatus("N/A");
+                    return emptyOrder;
+                });
     }
 
     // for uc10
     public List<DailyOrder> getFilteredOrders(LocalDate date, String foodType, String wardName, String status) {
 
         if (wardName != null && date != null && foodType != null && status != null) {
-            return dailyOrderRepository.findByWardNameAndOrderDateAndFoodType_TypeNameAndStatus(wardName, date, foodType, status);
+            return dailyOrderRepository.findByWardNameAndOrderDateAndFoodType_TypeNameAndStatus(wardName, date,
+                    foodType, status);
         } else if (wardName != null && date != null && status != null) {
             return dailyOrderRepository.findByWardNameAndOrderDateAndStatus(wardName, date, status);
         } else if (wardName != null && foodType != null && status != null) {
@@ -327,8 +353,8 @@ public class DailyOrderService {
         }
     }
 
-
-    public List<DailyOrderSummaryDTO> getFilteredOrdersDTO(LocalDate date, String foodType, String wardName, String status) {
+    public List<DailyOrderSummaryDTO> getFilteredOrdersDTO(LocalDate date, String foodType, String wardName,
+            String status) {
         List<DailyOrder> orders = getFilteredOrders(date, foodType, wardName, status);
 
         return orders.stream()
