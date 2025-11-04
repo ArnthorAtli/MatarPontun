@@ -11,6 +11,7 @@ import is.hi.matarpontun.repository.MenuRepository;
 import is.hi.matarpontun.service.MenuService;
 import java.util.Map;
 import java.util.List;
+import is.hi.matarpontun.service.FoodTypeService;
 
 @RestController
 @RequestMapping("/meals")
@@ -20,12 +21,13 @@ public class MealController {
     private final MealRepository mealRepository;
     private final MenuRepository menuRepository;
     private final MenuService menuService;
-
+    private final FoodTypeService foodTypeService;
     public MealController(MealService mealService, MealRepository mealRepository, MenuRepository menuRepository,
-            MenuService menuService) {
+            MenuService menuService, FoodTypeService foodTypeService) {
         this.mealService = mealService;
         this.mealRepository = mealRepository;
         this.menuRepository = menuRepository;
+        this.foodTypeService = foodTypeService;
         this.menuService = menuService;
     }
 
@@ -129,6 +131,19 @@ public class MealController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
+    }
+    /**
+     * Clears menuOfTheDay for every food type so menus can be safely deleted.
+     * 
+     * Example: POST /meals/resetMenusOfTheDay
+     */
+    @PostMapping("/resetMenusOfTheDay")
+    public ResponseEntity<?> resetMenusOfTheDay() {
+        int updatedCount = foodTypeService.clearAllMenusOfTheDay();
+        return ResponseEntity.ok(Map.of(
+                "message", "All menus of the day cleared.",
+                "foodTypesAffected", updatedCount
+        ));
     }
 
 }
