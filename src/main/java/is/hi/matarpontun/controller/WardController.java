@@ -18,6 +18,9 @@ import java.util.Map;
 
 import is.hi.matarpontun.security.JwtTokenUtil;
 
+/**
+ * REST controller responsible for handling requests related to wards.
+ */
 @RestController
 @RequestMapping("/wards")
 public class WardController {
@@ -27,6 +30,14 @@ public class WardController {
     private final DailyOrderService dailyOrderService;
     private final JwtTokenUtil jwtTokenUtil;
 
+    /**
+     * Constructs a new {@code WardController} with the required services.
+     *
+     * @param wardService       the service responsible for business logic related to ward authentication and data access.
+     * @param roomService       the service responsible for business logic related to room updates.
+     * @param dailyOrderService the service responsible for business logic related to daily orders.
+     * @param jwtTokenUtil      utility for issuing JWTs to authenticate wards.
+     */
     public WardController(WardService wardService, RoomService roomService, DailyOrderService dailyOrderService,
             JwtTokenUtil jwtTokenUtil) {
         this.wardService = wardService;
@@ -38,7 +49,7 @@ public class WardController {
     /**
      * Default welcome.
      *
-     * @return a welcome message
+     * @return {@code 200 OK} with a simple welcome message
      */
     @GetMapping
     public ResponseEntity<?> welcome() {
@@ -46,11 +57,10 @@ public class WardController {
     }
 
     /**
-     * UC4 – Creates a new ward account.
-     * +
-     * 
-     * @param request the ward registration information: name and password
-     * @return the created ward containing the new ward's ID and name
+     * UC4 - Creates a new ward account.
+     *
+     * @param request the ward registration information (name and password).
+     * @return {@code 200 OK} with the created ward's id and name.
      */
     @PostMapping
     public ResponseEntity<WardDTO> createWard(@RequestBody WardDTO request) {
@@ -58,12 +68,14 @@ public class WardController {
         return ResponseEntity.ok(new WardDTO(savedWard.getId(), savedWard.getWardName(), null));
     }
 
-
     /**
-     * UC5 & UC19 – Signs in a ward by validating credentials and creates a token.
+     * UC5 & UC19 - Signs in a ward by validating credentials and creates a JWT token.
+     * <p>
+     * Validates the provided credentials and on success, returns a token that can be
+     * used to authenticate subsequent requests.
      *
-     * @param request contains the ward name and password
-     * @return message if login was successful or not
+     * @param request ward credentials (name and password)
+     * @return {@code 200 OK} with a token and ward name or {@code 401 Unauthorized} if invalid
      */
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@RequestBody WardDTO request) {
@@ -82,11 +94,11 @@ public class WardController {
     }
 
     /**
-     * UC6 – Updates information for an existing ward.
+     * UC6 - Updates information for an existing ward.
      *
-     * @param id      the identifier of the ward
-     * @param request update request containing the new data (e.g., name, password)
-     * @return 200 OK with the updated information
+     * @param id      the ward id
+     * @param request update request containing the new data (name and password)
+     * @return {@code 200 OK} with the updated ward's id and name
      */
     @PutMapping("/{id}")
     public ResponseEntity<WardDTO> updateWard(
@@ -98,11 +110,10 @@ public class WardController {
     }
 
     /**
-     * UC2 – Places daily orders for all patients in the given ward.
+     * UC2 - Places daily orders for all patients in the given ward.
      *
-     * @param id the ward's unique identifier
-     * @return 200 OK with a JSON object containing confirmation message, ward name
-     *         and room information
+     * @param id the ward id
+     * @return {@code 200 OK} with a confirmation message, ward name and room information
      */
     @PostMapping("/{id}/order")
     public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
@@ -114,18 +125,37 @@ public class WardController {
                 "rooms", order.rooms()));
     }
 
+    /**
+     * Handles {@link IllegalArgumentException} thrown by service methods,
+     * mapping them to {@code 409 Conflict}.
+     *
+     * @param ex the exception
+     * @return {@code 409 Conflict} with an error message
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
         // Return a 409 Conflict status with the error message from the service
         return ResponseEntity.status(409).body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Handles {@link EntityNotFoundException}, mapping it to {@code 404 Not Found}.
+     *
+     * @param ex the exception
+     * @return {@code 404 Not Found} with an error message
+     */
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
     }
 
-    // UC15 Create a ward with rooms and patients in one request
+    /**
+     * UC15 - Creates a ward and rooms and patients in a single request.
+     *
+     * @param request creation request containing ward name, password, number of rooms
+     *                and patients per room.
+     * @return {@code 200 OK} with a confirmation message and counts of created resources
+     */
     @PostMapping("/createFullWard")
     public ResponseEntity<?> createFullWard(@RequestBody WardCreateRequestDTO request) {
         // Create the ward first
@@ -149,14 +179,24 @@ public class WardController {
                 "patientsPerRoom", patientsPerRoom));
     }
 
-    // UC17: Delete a ward along with all its rooms and patients
+    /**
+     * UC17 - Deletes a ward along with all its rooms and patients.
+     *
+     * @param wardId the ward id
+     * @return {@code 200 OK} on successful deletion and a confirmation message.
+     */
     @DeleteMapping("/{wardId}")
     public ResponseEntity<?> deleteWard(@PathVariable Long wardId) {
         wardService.deleteWardCascade(wardId);
         return ResponseEntity.ok(Map.of("message", "Ward and all associated rooms and patients deleted successfully."));
     }
 
-    // UC18: Delete a room along with all its patients
+    /**
+     * UC18 - Deletes a room along with all its patients.
+     *
+     * @param roomId the room id
+     * @return {@code 200 OK} on successful deletion or {@code 404 Not Found} if error occurs.
+     */
     @DeleteMapping("/rooms/{roomId}")
     public ResponseEntity<?> deleteRoom(@PathVariable Long roomId) {
         try {
@@ -168,11 +208,10 @@ public class WardController {
     }
 
     /**
-     * UC16 – Fetches a summary for a specific ward.
+     * UC16 - Fetches a summary for a specific ward.
      *
-     * @param wardId the ID of the ward
-     * @return 200 OK with information about the ward, or 404 Not Found if the ward
-     *         does not exist
+     * @param wardId the ward id
+     * @return {@code 200 OK} with {@link WardSummaryDTO} or {@code 404 Not Found} if the ward is not found.
      */
     @GetMapping("/summary/{wardId}")
     public ResponseEntity<?> getWardSummary(@PathVariable Long wardId) {
@@ -184,8 +223,16 @@ public class WardController {
         }
     }
 
-    // UC10 - Fetch filtered data via query parameters (e.g. by-category, by-date)
-    // (GET)
+    /**
+     * UC10 - Fetch filtered data via query parameters (e.g. by-category, by-date).
+     *
+     * @param wardId   the ward id
+     * @param date     optional ISO date ({@code yyyy-MM-dd})
+     * @param foodType optional food type name
+     * @param status   optional order status
+     * @return {@code 200 OK} with filter echo and a list of {@link DailyOrderSummaryDTO}
+     *         entries or {@code 400 Bad Request} if invalid
+     */
     @GetMapping("/{wardId}/orders")
     public ResponseEntity<?> getFilteredOrdersForWard(
             @PathVariable Long wardId,
@@ -226,7 +273,11 @@ public class WardController {
         return ResponseEntity.ok(response);
     }
 
-    // Endpoint to check if the user is authenticated
+    /**
+     * Simple authentication check endpoint for wards.
+     *
+     * @return {@code 200 OK} with {@code {"authenticated": true}}
+     */
     @GetMapping("/isAuthenticated")
     public ResponseEntity<?> isAuthenticated() {
         return ResponseEntity.ok(Map.of("authenticated", true));

@@ -155,8 +155,8 @@ public class MealController {
      * Creates one random menu per food type for the target date.
      * The request body: {@code "daysInTheFuture": }.
      *
-     * @param request the message specifying how many days ahead to generate menus for
-     * @return {@code 200 OK} with a result string
+     * @param request the message specifying how many days ahead to generate menus for.
+     * @return {@code 200 OK} with a result string.
      */
     @PostMapping("/createMenu")
     public ResponseEntity<String> createMenuForFutureDay(@RequestBody MenuRequest request) {

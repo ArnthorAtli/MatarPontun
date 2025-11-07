@@ -26,8 +26,8 @@ public class PatientController {
      * Constructs a new {@code PatientController} with required services.
      *
      * @param wardService       the service responsible for business logic related to ward authentication and data access.
-     * @param patientService    the service responsible for business logic for patient updates.
-     * @param dailyOrderService the service responsible for business logic for managing {@link DailyOrder}s.
+     * @param patientService    the service responsible for business logic related to patient updates.
+     * @param dailyOrderService the service responsible for managing {@link DailyOrder}s.
      */
     public PatientController(WardService wardService, PatientService patientService,
             DailyOrderService dailyOrderService) {
