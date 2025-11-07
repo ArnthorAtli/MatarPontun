@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST controller responsible for handling requests related to patients.
+ */
 @RestController
 @RequestMapping("/patients")
 public class PatientController {
@@ -21,6 +24,13 @@ public class PatientController {
 
     // depends á WardService því viljum að aðeins logged-in wards geti nálgast
     // uppls.
+    /**
+     * Constructs a new {@code PatientController}.
+     *
+     * @param wardService       service responsible for ward sign-in and ward-scoped data access
+     * @param patientService    business logic for patient updates (restrictions, allergies, food type)
+     * @param dailyOrderService business logic for creating/fetching/fixing {@link DailyOrder}s
+     */
     public PatientController(WardService wardService, PatientService patientService,
             DailyOrderService dailyOrderService) {
         this.wardService = wardService;
