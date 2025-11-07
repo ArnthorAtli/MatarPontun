@@ -195,10 +195,14 @@ public class MealController {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
+
     /**
-     * Clears menuOfTheDay for every food type so menus can be safely deleted.
-     * 
-     * Example: POST /meals/resetMenusOfTheDay
+     * POST {@code /meals/resetMenusOfTheDay}
+     * <p>
+     * Clears the "menu of the day" for all food types so menus can be safely deleted.
+     *
+     * @return {@code 200 OK} with a confirmation message and the number of
+     *         affected food types
      */
     @PostMapping("/resetMenusOfTheDay")
     public ResponseEntity<?> resetMenusOfTheDay() {
