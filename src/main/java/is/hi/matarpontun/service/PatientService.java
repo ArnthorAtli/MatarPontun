@@ -15,23 +15,38 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+/**
+ * Service responsible for managing {@link Patient} entities..
+ */
 @Service
 public class PatientService {
 
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
-    
 
+    /**
+     * Constructs a new {@code PatientService} with required repositories.
+     *
+     * @param patientRepository   the repository responsible for storing and retrieving {@link Patient} entities
+     * @param foodTypeRepository  the repository responsible for accessing {@link FoodType} entities
+     */
     public PatientService(PatientRepository patientRepository, FoodTypeRepository foodTypeRepository) {
         this.patientRepository = patientRepository;
         this.foodTypeRepository = foodTypeRepository;
     }
 
-    // Helper method to check a meal against all of a patient's restrictions and
-    // allergies.
+    /**
+     * Checks whether a given {@link Meal} conflicts with a patient's dietary
+     * restrictions or allergies.
+     * <p>
+     * This method compares each restriction and allergy term against the meal’s ingredient list.
+     *
+     * @param meal    the meal to check
+     * @param patient the patient whose restrictions and allergies should be validated
+     * @return {@code true} if a conflict is found; {@code false} otherwise
+     */
     // seinna til að bæta: when Meal.ingredients becomes a List<String>, this can
     // loop directly over ingredients instead of string matching.
-    // Shared dietary conflict logic (UC2 + UC3)
     public boolean checkMealForConflicts(Meal meal, Patient patient) {
         if (meal == null || meal.getIngredients() == null)
             return false;
@@ -54,23 +69,27 @@ public class PatientService {
         }
         return false;
 
-        /*
-         * String ingredients = meal.getIngredients().toLowerCase();
-         * 
-         * return Stream.concat(patient.getRestriction().stream(),
-         * patient.getAllergies().stream())
-         * .map(String::toLowerCase)
-         * .anyMatch(ingredients::contains);
-         * 
-         */
     }
 
+    /**
+     * Finds a {@link Patient} by id.
+     *
+     * @param patientID the patient’s id
+     * @return an {@link Optional} containing the patient if found or empty if not
+     */
     public Optional<Patient> findById(Long patientID) {
         return patientRepository.findById(patientID);
     }
 
-    // Adds a restriction string to the patient's restriction list. If the patient
-    // has no restriction yet, one is created automatically.
+    /**
+     * Adds a new restriction to the patient’s restriction list if it does not
+     * already exist.
+     *
+     * @param patientID   the patient’s id
+     * @param restriction the restriction to add
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public Patient addRestriction(Long patientID, String restriction) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -81,7 +100,14 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    // Remove one or more restrictions
+    /**
+     * Removes one or more restrictions from a patient’s restriction list.
+     *
+     * @param patientID the patient’s id
+     * @param toRemove  list of restrictions to remove
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public Patient removeRestrictions(Long patientID, java.util.List<String> toRemove) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -97,7 +123,13 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    // Remove all restrictions
+    /**
+     * Clears all restrictions from a patient’s record.
+     *
+     * @param patientID the patient’s id
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public Patient clearAllRestrictions(Long patientID) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -106,8 +138,14 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    // Adds an allergy string to the patient's allergy list. If the patient has no
-    // allergies yet, one is created automatically.
+    /**
+     * Adds a new allergy to the patient’s allergy list if it does not already exist.
+     *
+     * @param patientID the patient’s id
+     * @param allergy   the allergy to add
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public Patient addAllergy(Long patientID, String allergy) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -118,7 +156,14 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    // Remove one or more allergy
+    /**
+     * Removes one or more allergies from a patient’s allergy list.
+     *
+     * @param patientID the patient’s id
+     * @param toRemove  list of allergies to remove
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public Patient removeAllergies(Long patientID, java.util.List<String> toRemove) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -134,7 +179,13 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
-    // Remove all restrictions
+    /**
+     * Clears all allergies from a patient’s record.
+     *
+     * @param patientID the patient’s id
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public Patient clearAllAllergies(Long patientID) {
         Patient patient = patientRepository.findById(patientID)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -143,6 +194,14 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    /**
+     * Creates a new patient with random demographic data and assigns them to the
+     * specified {@link Room}.
+     *
+     * @param room the {@link Room} the patient belongs to
+     * @return the newly created {@link Patient}
+     * @throws EntityNotFoundException if the default {@link FoodType} is missing
+     */
     public Patient createRandomPatient(Room room) {
         Random random = new Random();
 
@@ -173,6 +232,14 @@ public class PatientService {
         return patientRepository.save(patient);
     }
 
+    /**
+     * Updates a patient’s assigned {@link FoodType} based on a given food type name.
+     *
+     * @param patientId    the patient’s id
+     * @param foodTypeName the name of the new food type
+     * @return the updated {@link Patient}
+     * @throws EntityNotFoundException if the patient or food type is not found
+     */
     public Patient updatePatientFoodType(Long patientId, String foodTypeName) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -183,6 +250,4 @@ public class PatientService {
         patient.setFoodType(newFoodType);
         return patientRepository.save(patient);
     }
-
-    
 }

@@ -281,7 +281,7 @@ public class PatientController {
     }
 
     /**
-     * UC13 — Deletes today's daily order for a specific patient.
+     * UC13 - Deletes today's daily order for a specific patient.
      * <p>
      * Allows ward staff to remove the current day's {@link DailyOrder} for the given patient.
      *
