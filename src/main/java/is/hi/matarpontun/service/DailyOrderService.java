@@ -24,9 +24,11 @@ public class DailyOrderService {
     /**
      * Constructs a new {@code DailyOrderService} with required repositories.
      *
-     * @param dailyOrderRepository repository for persisting and querying {@link DailyOrder} entities
+     * @param dailyOrderRepository repository for persisting and querying
+     *                             {@link DailyOrder} entities
      * @param patientRepository    repository for accessing {@link Patient} entities
-     * @param foodTypeRepository   repository for accessing {@link FoodType} entities
+     * @param foodTypeRepository   repository for accessing {@link FoodType}
+     *                             entities
      */
     public DailyOrderService(DailyOrderRepository dailyOrderRepository,
             PatientRepository patientRepository,
@@ -43,8 +45,10 @@ public class DailyOrderService {
      *
      * @param patientId the patient's id
      * @return the saved {@link DailyOrder} after restriction checks.
-     * @throws EntityNotFoundException if the patient does not exist or no menu of the day is assigned.
-     * @throws IllegalStateException   if the patient has no assigned {@link FoodType}.
+     * @throws EntityNotFoundException if the patient does not exist or no menu of
+     *                                 the day is assigned.
+     * @throws IllegalStateException   if the patient has no assigned
+     *                                 {@link FoodType}.
      */
     public DailyOrder orderFoodTypeForPatient(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
@@ -154,7 +158,8 @@ public class DailyOrderService {
      *
      * @param patientId the patient's id
      * @return the updated {@link DailyOrder}
-     * @throws EntityNotFoundException if the patient or today's order does not exist.
+     * @throws EntityNotFoundException if the patient or today's order does not
+     *                                 exist.
      */
     public DailyOrder checkForConflicts(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
@@ -177,7 +182,8 @@ public class DailyOrderService {
      * UC13 - Deletes today's order for a given patient.
      *
      * @param patientId the patient's id
-     * @return {@code true} if an order existed and was deleted, {@code false} otherwise
+     * @return {@code true} if an order existed and was deleted, {@code false}
+     *         otherwise
      * @throws EntityNotFoundException if the patient does not exist
      */
     public boolean deleteTodaysOrderForPatient(Long patientId) {
@@ -205,9 +211,6 @@ public class DailyOrderService {
 
         // Parse restriction string (e.g. "milk, nuts, gluten")
         String restrictionString = String.join(",", patient.getRestriction());
-        if (restrictionString == null || restrictionString.isBlank()) {
-            return; // No restrictions, keep as SUBMITTED
-        }
 
         List<String> restrictions = List.of(restrictionString.split(","))
                 .stream()
@@ -223,8 +226,22 @@ public class DailyOrderService {
         java.util.function.Function<Meal, Boolean> hasConflict = meal -> {
             if (meal == null || meal.getIngredients() == null)
                 return false;
+
             String ingredients = meal.getIngredients().toLowerCase();
-            return restrictions.stream().anyMatch(ingredients::contains);
+
+            for (String r : restrictions) {
+                if (r == null || r.isBlank())
+                    continue;
+                String token = r.toLowerCase();
+
+                // Match token only when NOT part of a larger alphanumeric string
+                String regex = "(?<![a-z0-9])" + java.util.regex.Pattern.quote(token) + "(?![a-z0-9])";
+
+                if (java.util.regex.Pattern.compile(regex).matcher(ingredients).find()) {
+                    return true; // exact match found
+                }
+            }
+            return false;
         };
 
         // Check each meal and replace if necessary
