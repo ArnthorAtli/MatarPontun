@@ -21,6 +21,13 @@ public class DailyOrderService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
 
+    /**
+     * Constructs a new {@code DailyOrderService} with required repositories.
+     *
+     * @param dailyOrderRepository repository for persisting and querying {@link DailyOrder} entities
+     * @param patientRepository    repository for accessing {@link Patient} entities
+     * @param foodTypeRepository   repository for accessing {@link FoodType} entities
+     */
     public DailyOrderService(DailyOrderRepository dailyOrderRepository,
             PatientRepository patientRepository,
             FoodTypeRepository foodTypeRepository) {
@@ -30,8 +37,14 @@ public class DailyOrderService {
     }
 
     /**
-     * UC1 – Ward staff manually orders a food type for one patient
-     * Ensures a DailyOrder exists for the patient for the current day.
+     * UC1 - Manually orders a food type for one patient for today.
+     * <p>
+     * Ensures that a {@link DailyOrder} exists for the patient on the current date.
+     *
+     * @param patientId the patient's id
+     * @return the saved {@link DailyOrder} after restriction checks.
+     * @throws EntityNotFoundException if the patient does not exist or no menu of the day is assigned.
+     * @throws IllegalStateException   if the patient has no assigned {@link FoodType}.
      */
     public DailyOrder orderFoodTypeForPatient(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
@@ -39,8 +52,8 @@ public class DailyOrderService {
 
         LocalDate today = LocalDate.now();
 
-        // if the patient already has an order today, delete it first and assign a new
-        // one in case food type/menu/restrictions changed
+        // if the patient already has an order today, delete it first and assign
+        // a new one in case food type/menu/restrictions changed
         Optional<DailyOrder> existingOrderOpt = dailyOrderRepository.findByPatientAndOrderDate(patient, today);
         if (existingOrderOpt.isPresent()) {
             DailyOrder existingOrder = existingOrderOpt.get();
@@ -78,13 +91,20 @@ public class DailyOrderService {
         // Save it before applying restrictions
         dailyOrderRepository.save(order);
 
-        // Check restrictions (stubbed for now)
+        // Check restrictions
         checkForRestrictions(order);
 
-        // Save again if restrictions modified meals/status
+        // Save again if restrictions modified meals or status
         return dailyOrderRepository.save(order);
     }
 
+    /**
+     * Generates today's orders for all patients in a ward and maps the result into
+     * a structured DTO grouped by rooms and patients.
+     *
+     * @param ward the ward to process
+     * @return an {@link OrderDTO} containing patient orders based on rooms
+     */
     public OrderDTO generateOrdersForWard(Ward ward) {
         List<OrderDTO.RoomInfo> roomInfos = new ArrayList<>();
 
@@ -128,6 +148,14 @@ public class DailyOrderService {
         return new OrderDTO(ward.getWardName(), roomInfos);
     }
 
+    /**
+     * Checks a patient's order for conflicts against their restrictions and updates
+     * the order's meals and status as needed.
+     *
+     * @param patientId the patient's id
+     * @return the updated {@link DailyOrder}
+     * @throws EntityNotFoundException if the patient or today's order does not exist.
+     */
     public DailyOrder checkForConflicts(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -145,7 +173,13 @@ public class DailyOrderService {
         return meal != null ? meal.getName() : "N/A";
     }
 
-    // UC13 – Ward staff deletes today’s order for one patient
+    /**
+     * UC13 - Deletes today's order for a given patient.
+     *
+     * @param patientId the patient's id
+     * @return {@code true} if an order existed and was deleted, {@code false} otherwise
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public boolean deleteTodaysOrderForPatient(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
