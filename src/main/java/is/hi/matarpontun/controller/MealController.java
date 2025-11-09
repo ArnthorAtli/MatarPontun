@@ -47,7 +47,7 @@ public class MealController {
     /**
      * UC21 - Create a new meal
      * POST {@code /meals/newMeal}
-     * <p>
+     * 
      * Creates a new {@link Meal} from the provided DTO.
      *
      * @param dto the request body containing meal data
@@ -62,7 +62,7 @@ public class MealController {
     /**
      * UC23 - Modify and existing meal
      * PUT {@code /meals/modifyMealIngredients/{mealId}}
-     * <p>
+     * 
      * Changes the ingredients of an existing meal.
      *
      * @param mealId the id of the meal to update
@@ -87,7 +87,7 @@ public class MealController {
     /**
      * (UC23 - Modify meal name)
      * PUT {@code /meals/modifyMealName/{mealId}}
-     * <p>
+     * 
      * Changes the name of an existing meal.
      *
      * @param mealId the id of the meal to update
@@ -112,7 +112,7 @@ public class MealController {
     /**
      * UC22 - Delete a meal
      * DELETE {@code /meals/{mealId}}
-     * <p>
+     * 
      * Deletes a meal if it is not referenced by any {@link Menu}. If the meal is in use,
      * responds with {@code 409 Conflict}.
      *
@@ -151,7 +151,7 @@ public class MealController {
 
     /**
      * POST {@code /meals/createMenu}
-     * <p>
+     * 
      * Creates one random menu per food type for the target date.
      * The request body: {@code "daysInTheFuture": }.
      *
@@ -180,7 +180,7 @@ public class MealController {
 
     /**
      * PUT {@code /meals/assignMenuOfTheDay}
-     * <p>
+     * 
      * Assigns the “menu of the day” for each food type.
      *
      * @return {@code 200 OK} with a confirmation message or {@code 500 Internal Server Error}
@@ -198,7 +198,7 @@ public class MealController {
 
     /**
      * POST {@code /meals/resetMenusOfTheDay}
-     * <p>
+     * 
      * Clears the "menu of the day" for all food types so menus can be safely deleted.
      *
      * @return {@code 200 OK} with a confirmation message and the number of

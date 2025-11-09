@@ -1,6 +1,5 @@
 package is.hi.matarpontun.service;
 
-import is.hi.matarpontun.model.Meal;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import is.hi.matarpontun.model.FoodType;

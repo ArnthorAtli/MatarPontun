@@ -15,7 +15,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // Allow toggling security on/off 
+
     private boolean securityEnabled = true;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {

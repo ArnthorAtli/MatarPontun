@@ -89,7 +89,7 @@ public class RoomService {
     /**
      * Deletes a {@link Room} and all {@link Patient}s assigned to it in a single
      * transaction.
-     * <p>
+     * 
      * The method ensures that patient entities are deleted before the room itself,
      * maintaining referential integrity.
      *

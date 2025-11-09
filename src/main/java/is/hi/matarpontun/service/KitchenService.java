@@ -64,7 +64,7 @@ public class KitchenService {
 
     /**
      * Helper method for incrementing meal counts within a nested summary structure.
-     * <p>
+     * 
      * Adds a meal for a ward’s summary map under the specified category and food type.
      *
      * @param mealSummary the summary map for a single ward

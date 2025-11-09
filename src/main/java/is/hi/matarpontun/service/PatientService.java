@@ -38,7 +38,7 @@ public class PatientService {
     /**
      * Checks whether a given {@link Meal} conflicts with a patient's dietary
      * restrictions or allergies.
-     * <p>
+     * 
      * This method compares each restriction and allergy term against the meal’s ingredient list.
      *
      * @param meal    the meal to check

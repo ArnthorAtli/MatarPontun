@@ -38,7 +38,7 @@ public class DailyOrderService {
 
     /**
      * UC1 - Manually orders a food type for one patient for today.
-     * <p>
+     * 
      * Ensures that a {@link DailyOrder} exists for the patient on the current date.
      *
      * @param patientId the patient's id

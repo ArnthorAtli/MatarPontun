@@ -60,7 +60,7 @@ public class WardService {
 
     /**
      * Creates a new {@link Ward}.
-     * <p>
+     * 
      * Ensures that no duplicate ward names exist before saving.
      *
      * @param ward the {@link Ward} entity to create
@@ -117,7 +117,7 @@ public class WardService {
 
     /**
      * UC6 - Updates the information of an existing {@link Ward}.
-     * <p>
+     * 
      * Both the ward name and password must be provided.
      *
      * @param id  the id of the ward to update
@@ -150,7 +150,7 @@ public class WardService {
 
     /**
      * UC16 - Retrieves a summary for a specific ward by its id.
-     * <p>
+     * 
      * The summary includes the ward name, room count and patient count.
      *
      * @param wardId the id of the ward
@@ -170,7 +170,7 @@ public class WardService {
 
     /**
      * UC17 - Deletes a ward and all associated rooms and patients in a cascading transaction.
-     * <p>
+     * 
      * The deletion order ensures all patients are removed before rooms and the ward itself.
      *
      * @param wardId the id of the ward to delete

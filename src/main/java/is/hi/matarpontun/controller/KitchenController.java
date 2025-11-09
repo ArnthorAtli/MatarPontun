@@ -27,7 +27,7 @@ public class KitchenController {
     /**
      * UC EX1
      * Handles HTTP GET requests to {@code /kitchen/todaysOrders}.
-     * <p>
+     * 
      * Retrieves a summary of today's meal orders, showing the number of meals of each food type
      * for each ward and meal category.
      *

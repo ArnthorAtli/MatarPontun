@@ -40,7 +40,7 @@ public class MenuService {
 
     /**
      * Creates one {@link Menu} for each {@link FoodType} for (today + {@code daysInFuture}).
-     * <p>
+     * 
      * For each food type, the method randomly selects one meal per category
      * (breakfast, lunch, etc.) from that food type’s available meals.
      *
@@ -107,7 +107,7 @@ public class MenuService {
 
     /**
      * Assigns today’s {@link Menu} as the “menu of the day” for each {@link FoodType}.
-     * <p>
+     * 
      * Looks up all menus matching the current date and updates their corresponding
      * {@link FoodType} entities to reference the appropriate daily menu.
      *
