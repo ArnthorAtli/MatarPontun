@@ -85,7 +85,7 @@ public class PatientDailyOrderDTO {
             this.nightSnackIngredients = nightSnackIngredients;
         }
 
-        // Getters
+        // --- Getters ---
         public String getBreakfastName() { return breakfastName; }
         public String getBreakfastIngredients() { return breakfastIngredients; }
         public String getLunchName() { return lunchName; }

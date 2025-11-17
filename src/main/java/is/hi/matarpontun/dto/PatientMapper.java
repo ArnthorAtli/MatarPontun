@@ -40,8 +40,7 @@ public class PatientMapper {
         );
     }
 
-    // ---------- Helper Methods ---------- //
-
+    // --- Helper Methods ---
     private static String safeMealName(Meal meal) {
         return (meal != null && meal.getName() != null) ? meal.getName() : "N/A";
     }

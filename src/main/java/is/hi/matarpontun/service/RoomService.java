@@ -99,7 +99,7 @@ public class RoomService {
      */
     @Transactional
     public Map<String, Object> deleteRoomAndPatients(Long roomId) {
-        // find the room
+        // Find the room
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new RuntimeException("Room with ID " + roomId + " not found."));
 
