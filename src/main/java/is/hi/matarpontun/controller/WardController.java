@@ -70,7 +70,7 @@ public class WardController {
 
     /**
      * UC5 & UC19 - Signs in a ward by validating credentials and creates a JWT token.
-     * 
+     * <p>
      * Validates the provided credentials and on success, returns a token that can be
      * used to authenticate subsequent requests.
      *

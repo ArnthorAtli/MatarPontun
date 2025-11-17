@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public class DailyOrderSummaryDTO {
     private Long orderId;
     private LocalDate orderDate;
-    private String wardName;//taka út?
+    private String wardName;
     private String roomNumber;
     private String patientName;
     private String foodType;
@@ -22,7 +22,7 @@ public class DailyOrderSummaryDTO {
         this.status = status;
     }
 
-    // --- Getters --- //
+    // --- Getters ---
     public Long getOrderId() { return orderId; }
     public LocalDate getOrderDate() { return orderDate; }
     public String getWardName() { return wardName; }
