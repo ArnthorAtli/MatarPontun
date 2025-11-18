@@ -15,7 +15,7 @@ public class RestrictionCheckResultDTO {
     private List<String> restrictions;
     private Map<String, MealInfo> meals = new LinkedHashMap<>();
 
-    // ----- Inner class for meal details -----
+    // Inner class for meal details
     public static class MealInfo {
         private String name;
         private String ingredients;
@@ -39,7 +39,7 @@ public class RestrictionCheckResultDTO {
         }
     }
 
-    // ----- Constructor that builds itself -----
+    // Constructor that builds itself
     public RestrictionCheckResultDTO(Patient patient, DailyOrder order, String message) {
         this.message = message;
         this.patient = patient.getName();
@@ -54,7 +54,7 @@ public class RestrictionCheckResultDTO {
         meals.put("nightSnack", new MealInfo(order.getNightSnack()));
     }
 
-    // ----- Getters -----
+    // --- Getters ---
     public String getMessage() {
         return message;
     }

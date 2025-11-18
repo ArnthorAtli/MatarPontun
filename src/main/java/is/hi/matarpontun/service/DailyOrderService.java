@@ -21,6 +21,15 @@ public class DailyOrderService {
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
 
+    /**
+     * Constructs a new {@code DailyOrderService} with required repositories.
+     *
+     * @param dailyOrderRepository repository for persisting and querying
+     *                             {@link DailyOrder} entities
+     * @param patientRepository    repository for accessing {@link Patient} entities
+     * @param foodTypeRepository   repository for accessing {@link FoodType}
+     *                             entities
+     */
     public DailyOrderService(DailyOrderRepository dailyOrderRepository,
             PatientRepository patientRepository,
             FoodTypeRepository foodTypeRepository) {
@@ -30,8 +39,16 @@ public class DailyOrderService {
     }
 
     /**
-     * UC1 – Ward staff manually orders a food type for one patient
-     * Ensures a DailyOrder exists for the patient for the current day.
+     * UC1 - Manually orders a food type for one patient for today.
+     * 
+     * Ensures that a {@link DailyOrder} exists for the patient on the current date.
+     *
+     * @param patientId the patient's id
+     * @return the saved {@link DailyOrder} after restriction checks.
+     * @throws EntityNotFoundException if the patient does not exist or no menu of
+     *                                 the day is assigned.
+     * @throws IllegalStateException   if the patient has no assigned
+     *                                 {@link FoodType}.
      */
     public DailyOrder orderFoodTypeForPatient(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
@@ -39,8 +56,8 @@ public class DailyOrderService {
 
         LocalDate today = LocalDate.now();
 
-        // if the patient already has an order today, delete it first and assign a new
-        // one in case food type/menu/restrictions changed
+        // if the patient already has an order today, delete it first and assign
+        // a new one in case food type/menu/restrictions changed
         Optional<DailyOrder> existingOrderOpt = dailyOrderRepository.findByPatientAndOrderDate(patient, today);
         if (existingOrderOpt.isPresent()) {
             DailyOrder existingOrder = existingOrderOpt.get();
@@ -78,13 +95,20 @@ public class DailyOrderService {
         // Save it before applying restrictions
         dailyOrderRepository.save(order);
 
-        // Check restrictions (stubbed for now)
+        // Check restrictions
         checkForRestrictions(order);
 
-        // Save again if restrictions modified meals/status
+        // Save again if restrictions modified meals or status
         return dailyOrderRepository.save(order);
     }
 
+    /**
+     * Generates today's orders for all patients in a ward and maps the result into
+     * a structured DTO grouped by rooms and patients.
+     *
+     * @param ward the ward to process
+     * @return an {@link OrderDTO} containing patient orders based on rooms
+     */
     public OrderDTO generateOrdersForWard(Ward ward) {
         List<OrderDTO.RoomInfo> roomInfos = new ArrayList<>();
 
@@ -128,6 +152,15 @@ public class DailyOrderService {
         return new OrderDTO(ward.getWardName(), roomInfos);
     }
 
+    /**
+     * Checks a patient's order for conflicts against their restrictions and updates
+     * the order's meals and status as needed.
+     *
+     * @param patientId the patient's id
+     * @return the updated {@link DailyOrder}
+     * @throws EntityNotFoundException if the patient or today's order does not
+     *                                 exist.
+     */
     public DailyOrder checkForConflicts(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -145,7 +178,14 @@ public class DailyOrderService {
         return meal != null ? meal.getName() : "N/A";
     }
 
-    // UC13 – Ward staff deletes today’s order for one patient
+    /**
+     * UC13 - Deletes today's order for a given patient.
+     *
+     * @param patientId the patient's id
+     * @return {@code true} if an order existed and was deleted, {@code false}
+     *         otherwise
+     * @throws EntityNotFoundException if the patient does not exist
+     */
     public boolean deleteTodaysOrderForPatient(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
@@ -163,7 +203,7 @@ public class DailyOrderService {
         }
     }
 
-    // -----------------------HELPER FUNCTIONS-------------------------
+    // --- HELPER FUNCTIONS ---
 
     // Checks if any of the meals in the order conflict with patient's restrictions
     private void checkForRestrictions(DailyOrder order) {
@@ -171,9 +211,6 @@ public class DailyOrderService {
 
         // Parse restriction string (e.g. "milk, nuts, gluten")
         String restrictionString = String.join(",", patient.getRestriction());
-        if (restrictionString == null || restrictionString.isBlank()) {
-            return; // No restrictions, keep as SUBMITTED
-        }
 
         List<String> restrictions = List.of(restrictionString.split(","))
                 .stream()
@@ -189,8 +226,22 @@ public class DailyOrderService {
         java.util.function.Function<Meal, Boolean> hasConflict = meal -> {
             if (meal == null || meal.getIngredients() == null)
                 return false;
+
             String ingredients = meal.getIngredients().toLowerCase();
-            return restrictions.stream().anyMatch(ingredients::contains);
+
+            for (String r : restrictions) {
+                if (r == null || r.isBlank())
+                    continue;
+                String token = r.toLowerCase();
+
+                // Match token only when NOT part of a larger alphanumeric string
+                String regex = "(?<![a-z0-9])" + java.util.regex.Pattern.quote(token) + "(?![a-z0-9])";
+
+                if (java.util.regex.Pattern.compile(regex).matcher(ingredients).find()) {
+                    return true; // exact match found
+                }
+            }
+            return false;
         };
 
         // Check each meal and replace if necessary
@@ -257,10 +308,9 @@ public class DailyOrderService {
                 + " → " + order.getStatus());
     }
 
-    // Reynir að finna máltíð sem passar fyrir takmarkanir, annars skilar null
-
+    // Tries to find meals which fits the restrictions, else return null
     private Meal findSafeAlternative(FoodType currentFoodType, String category, List<String> restrictions) {
-        // --- Define food type groups ---
+        // Define food type groups
         List<List<String>> groups = List.of(
                 List.of("A1", "A2", "A3", "OP", "RDS-KF", "RDS-G"),
                 List.of("M1", "M2", "M3"),
@@ -282,7 +332,7 @@ public class DailyOrderService {
                 .filter(ft -> currentGroup.contains(ft.getTypeName()))
                 .toList();
 
-        // --- Check menus for same group ---
+        // Check menus for same group
         for (FoodType ft : foodTypesInGroup) {
             Menu menu = ft.getMenuOfTheDay();
             if (menu == null)
@@ -310,7 +360,7 @@ public class DailyOrderService {
             }
         }
 
-        // --- No safe match found ---
+        // No safe match found
         System.out.println(
                 "No safe alternative found for " + currentTypeName + " " + category + " → manual change required.");
         return null;
@@ -328,7 +378,7 @@ public class DailyOrderService {
                 });
     }
 
-    // for uc10
+    // For UC10
     public List<DailyOrder> getFilteredOrders(LocalDate date, String foodType, String wardName, String status) {
 
         if (wardName != null && date != null && foodType != null && status != null) {

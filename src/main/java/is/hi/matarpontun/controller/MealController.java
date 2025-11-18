@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.List;
 import is.hi.matarpontun.service.FoodTypeService;
 
+/**
+ * REST controller responsible for handling requests related to meals and menus.
+ */
 @RestController
 @RequestMapping("/meals")
 public class MealController {
@@ -22,6 +25,16 @@ public class MealController {
     private final MenuRepository menuRepository;
     private final MenuService menuService;
     private final FoodTypeService foodTypeService;
+
+
+    /**
+     * Constructs a new {@code MealController} with required services and repositories.
+     *
+     * @param mealService    the service responsible for business logic related to creating and updating meals
+     * @param mealRepository the repository responsible for accessing {@link Meal} entities
+     * @param menuRepository the repository responsible for accessing {@link Menu} entities
+     * @param menuService    the service responsible for business logic related to generating and assigning menus
+     */
     public MealController(MealService mealService, MealRepository mealRepository, MenuRepository menuRepository,
             MenuService menuService, FoodTypeService foodTypeService) {
         this.mealService = mealService;
@@ -31,14 +44,32 @@ public class MealController {
         this.menuService = menuService;
     }
 
-    // UC21 - Create new meal
+    /**
+     * UC21 - Create a new meal
+     * POST {@code /meals/newMeal}
+     * 
+     * Creates a new {@link Meal} from the provided DTO.
+     *
+     * @param dto the request body containing meal data
+     * @return {@code 200 OK} with the saved {@link Meal}
+     */
     @PostMapping("/newMeal")
     public ResponseEntity<?> createMeal(@RequestBody MealDTO dto) {
         Meal savedMeal = mealService.createMeal(dto);
         return ResponseEntity.ok(savedMeal);
     }
 
-    // UC23 - Modify meal ingredients
+    /**
+     * UC23 - Modify and existing meal
+     * PUT {@code /meals/modifyMealIngredients/{mealId}}
+     * 
+     * Changes the ingredients of an existing meal.
+     *
+     * @param mealId the id of the meal to update
+     * @param body   JSON body containing an {@code "ingredients"} field
+     * @return {@code 200 OK} with a confirmation message or {@code 400 Bad Request}
+     *         if the {@code "ingredients"} field is missing
+     */
     @PutMapping("/modifyMealIngredients/{mealId}")
     public ResponseEntity<?> modifyMeal(@PathVariable Long mealId, @RequestBody Map<String, String> body) {
         String newIngredients = body.get("ingredients");
@@ -53,7 +84,17 @@ public class MealController {
                 "newIngredients", updatedMeal.getIngredients()));
     }
 
-    // UC23 - Modify meal name
+    /**
+     * (UC23 - Modify meal name)
+     * PUT {@code /meals/modifyMealName/{mealId}}
+     * 
+     * Changes the name of an existing meal.
+     *
+     * @param mealId the id of the meal to update
+     * @param body   JSON body containing a {@code "name"} field
+     * @return {@code 200 OK} with a confirmation message or {@code 400 Bad Request}
+     *         if the {@code "name"} field is missing
+     */
     @PutMapping("/modifyMealName/{mealId}")
     public ResponseEntity<?> modifyMealName(@PathVariable Long mealId, @RequestBody Map<String, String> body) {
         String newName = body.get("name");
@@ -68,7 +109,18 @@ public class MealController {
                 "newName", updatedMeal.getName()));
     }
 
-    // UC22 - Delete meal
+    /**
+     * UC22 - Delete a meal
+     * DELETE {@code /meals/{mealId}}
+     * 
+     * Deletes a meal if it is not referenced by any {@link Menu}. If the meal is in use,
+     * responds with {@code 409 Conflict}.
+     *
+     * @param mealId the id of the meal to delete
+     * @return {@code 200 OK} on successful deletion or {@code 409 Conflict} if the meal
+     *         is currently used in a menu
+     * @throws RuntimeException if the meal does not exist
+     */
     @DeleteMapping("/{mealId}")
     public ResponseEntity<?> deleteMeal(@PathVariable Long mealId) {
         Meal meal = mealRepository.findById(mealId)
@@ -98,10 +150,13 @@ public class MealController {
     }
 
     /**
-     * POST /meals/createMenu
-     * Body: { "daysInTheFuture": 2 }
+     * POST {@code /meals/createMenu}
+     * 
+     * Creates one random menu per food type for the target date.
+     * The request body: {@code "daysInTheFuture": }.
      *
-     * Creates one random menu for each food type for the target date.
+     * @param request the message specifying how many days ahead to generate menus for.
+     * @return {@code 200 OK} with a result string.
      */
     @PostMapping("/createMenu")
     public ResponseEntity<String> createMenuForFutureDay(@RequestBody MenuRequest request) {
@@ -109,20 +164,28 @@ public class MealController {
         return ResponseEntity.ok(result);
     }
 
-    // Simple DTO for Postman body
+    /**
+     * Simple DTO used for passing the number of days in the future when creating menus.
+     */
     public static class MenuRequest {
         private int daysInTheFuture;
-
         public int getDaysInTheFuture() {
             return daysInTheFuture;
         }
-
+        //Aldrei notað
         public void setDaysInTheFuture(int daysInTheFuture) {
             this.daysInTheFuture = daysInTheFuture;
         }
     }
 
-    //assign menu of the day to each food type
+    /**
+     * PUT {@code /meals/assignMenuOfTheDay}
+     * 
+     * Assigns the “menu of the day” for each food type.
+     *
+     * @return {@code 200 OK} with a confirmation message or {@code 500 Internal Server Error}
+     *         if an unexpected error occurs
+     */
     @PutMapping("/assignMenuOfTheDay")
     public ResponseEntity<?> assignMenuOfTheDay() {
         try {
@@ -132,10 +195,14 @@ public class MealController {
             return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
     }
+
     /**
-     * Clears menuOfTheDay for every food type so menus can be safely deleted.
+     * POST {@code /meals/resetMenusOfTheDay}
      * 
-     * Example: POST /meals/resetMenusOfTheDay
+     * Clears the "menu of the day" for all food types so menus can be safely deleted.
+     *
+     * @return {@code 200 OK} with a confirmation message and the number of
+     *         affected food types
      */
     @PostMapping("/resetMenusOfTheDay")
     public ResponseEntity<?> resetMenusOfTheDay() {

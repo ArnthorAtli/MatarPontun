@@ -33,7 +33,7 @@ public class Patient {
 
     // Many patients belong to one ward
     @ManyToOne
-    @JoinColumn(name = "ward_id") //býr til auðkennislykil dálk
+    @JoinColumn(name = "ward_id")
     @JsonBackReference //pervents inf loop
     private Ward ward;
 
@@ -66,10 +66,8 @@ public class Patient {
     @Column(name = "restriction")
     private List<String> restriction = new ArrayList<>();
 
-    // using the empty constructor + setters
     public Patient() {}
 
-    // using the all-args constructor
     public Patient(String name, int age, int bedNumber, Ward ward) {
         this.name = name;
         this.age = age;
@@ -78,7 +76,7 @@ public class Patient {
     }
 
 
-    // ---------- Getters & Setters ----------
+    // ---------- Getters and Setters ----------
 
     public Ward getWard() {
         return ward;

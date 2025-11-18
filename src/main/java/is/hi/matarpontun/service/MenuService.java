@@ -13,6 +13,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Service responsible for managing {@link Menu} operations.
+ */
 @Service
 public class MenuService {
 
@@ -20,6 +23,13 @@ public class MenuService {
     private final MealRepository mealRepository;
     private final FoodTypeRepository foodTypeRepository;
 
+    /**
+     * Constructs a new {@code MenuService} with required repositories.
+     *
+     * @param menuRepository      the repository responsible for accessing {@link Menu} entities
+     * @param mealRepository      the repository responsible for accessing {@link Meal} entities
+     * @param foodTypeRepository  the repository responsible for accessing {@link FoodType} entities
+     */
     public MenuService(MenuRepository menuRepository,
             MealRepository mealRepository,
             FoodTypeRepository foodTypeRepository) {
@@ -29,8 +39,13 @@ public class MenuService {
     }
 
     /**
-     * Creates one Menu per FoodType for the date (today + daysInFuture),
-     * randomly choosing a meal for each category.
+     * Creates one {@link Menu} for each {@link FoodType} for (today + {@code daysInFuture}).
+     * 
+     * For each food type, the method randomly selects one meal per category
+     * (breakfast, lunch, etc.) from that food type’s available meals.
+     *
+     * @param daysInFuture the number of days from today for which to create menus
+     * @return a summary message indicating how many menus were created
      */
     public String createMenusForFutureDay(int daysInFuture) {
         LocalDate targetDate = LocalDate.now().plusDays(daysInFuture);
@@ -66,6 +81,16 @@ public class MenuService {
         return "Created " + createdCount + " new menus for date " + targetDate + ".";
     }
 
+    /**
+     * Helper method that randomly selects a {@link Meal} from the given {@link FoodType}
+     * and category.
+     *
+     * @param foodType the food type to select from
+     * @param category the meal category (e.g., "breakfast", "lunch")
+     * @param rand     random instance used for selection
+     * @return a randomly selected {@link Meal}
+     * @throws EntityNotFoundException if no meals exist for the given category and food type.
+     */
     private Meal randomMealFor(FoodType foodType, String category, Random rand) {
         List<Meal> meals = mealRepository.findByFoodTypeId(foodType.getId())
                 .stream()
@@ -80,6 +105,14 @@ public class MenuService {
         return meals.get(rand.nextInt(meals.size()));
     }
 
+    /**
+     * Assigns today’s {@link Menu} as the “menu of the day” for each {@link FoodType}.
+     * 
+     * Looks up all menus matching the current date and updates their corresponding
+     * {@link FoodType} entities to reference the appropriate daily menu.
+     *
+     * @throws IllegalStateException if no menus exist for the current date.
+     */
     public void assignMenuOfTheDay() {
         LocalDate today = LocalDate.now();
         List<Menu> todayMenus = menuRepository.findAll()

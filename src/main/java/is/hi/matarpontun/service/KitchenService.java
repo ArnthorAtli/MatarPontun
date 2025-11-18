@@ -9,11 +9,19 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service for managing operations related to the kitchen.
+ */
 @Service
 public class KitchenService {
 
     private final DailyOrderRepository dailyOrderRepository;
 
+    /**
+     * Constructs a new {@code KitchenService}.
+     *
+     * @param dailyOrderRepository repository used to access and query {@link DailyOrder}s
+     */
     public KitchenService(DailyOrderRepository dailyOrderRepository) {
         this.dailyOrderRepository = dailyOrderRepository;
     }
@@ -54,6 +62,15 @@ public class KitchenService {
         return response;
     }
 
+    /**
+     * Helper method for incrementing meal counts within a nested summary structure.
+     * 
+     * Adds a meal for a ward’s summary map under the specified category and food type.
+     *
+     * @param mealSummary the summary map for a single ward
+     * @param category    the meal category (e.g., "Breakfast", "Lunch")
+     * @param meal        the {@link Meal} to be counted
+     */
     private void addMealToSummary(Map<String, Map<String, Long>> mealSummary, String category, Meal meal) {
         if (meal == null || meal.getFoodType() == null) return;
 

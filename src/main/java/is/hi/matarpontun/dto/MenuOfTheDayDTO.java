@@ -23,6 +23,7 @@ public class MenuOfTheDayDTO {
         this.midnightSnack = midnightSnack;
     }
 
+    // --- Getters and Setters
     public LocalDate getDate() { return date; }
     public String getBreakfast() { return breakfast; }
     public String getLunch() { return lunch; }

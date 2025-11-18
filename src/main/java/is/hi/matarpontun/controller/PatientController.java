@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * REST controller responsible for handling requests related to patients.
+ */
 @RestController
 @RequestMapping("/patients")
 public class PatientController {
@@ -19,8 +22,13 @@ public class PatientController {
     private final PatientService patientService;
     private final DailyOrderService dailyOrderService;
 
-    // depends á WardService því viljum að aðeins logged-in wards geti nálgast
-    // uppls.
+    /**
+     * Constructs a new {@code PatientController} with required services.
+     *
+     * @param wardService       the service responsible for business logic related to ward authentication and data access.
+     * @param patientService    the service responsible for business logic related to patient updates.
+     * @param dailyOrderService the service responsible for managing {@link DailyOrder}s.
+     */
     public PatientController(WardService wardService, PatientService patientService,
             DailyOrderService dailyOrderService) {
         this.wardService = wardService;
@@ -29,10 +37,11 @@ public class PatientController {
     }
 
     /**
-     * UC8 – Retrieves all patients for a specific ward.
+     * UC8 - Retrieves all patients for a specific ward.
      *
-     * @param request contains the ward name and password for authentication
-     * @return a list of patients for the ward if credentials are valid
+     * @param request ward name and password ({@link WardDTO})
+     * @return {@code 200 OK} with the ward’s patients on success
+     *         or {@code 404 Not Found} if credentials are invalid
      */
     @GetMapping("/all")
     public ResponseEntity<?> getAllPatientsForWard(@RequestBody WardDTO request) {
@@ -47,11 +56,12 @@ public class PatientController {
     }
 
     /**
-     * UC9 – Retrieves details for a single patient by patient id.
+     * UC9 - Retrieves details for a single patient by patient id.
      *
-     * @param request the ward authentication details
-     * @param id      the patient ID
-     * @return the patient data if found and authorized
+     * @param request ward authentication details
+     * @param id      patient id
+     * @return {@code 200 OK} with patient data or {@code 404 Not Found} if
+     *         not found or the ward is not authorized
      */
     @GetMapping("{id}")
     public ResponseEntity<?> getPatientByIdForWard(@RequestBody WardDTO request,
@@ -67,12 +77,12 @@ public class PatientController {
     }
 
     /**
-     * UC3 - Adds a restriction and reassigns the patient's food type if a conflict
-     * arises.
+     * UC3 - Adds a restriction and reassigns the patient's food type if a conflict arises.
      *
-     * @param id      the patient's ID
-     * @param request contains the restriction that should be added
-     * @return a result DTO describing whether a reassignment was needed
+     * @param id      patient id
+     * @param request JSON body containing {@code "restriction"}
+     * @return {@code 200 OK} with a {@link RestrictionCheckResultDTO} summarizing the update
+     *         or {@code 400 Bad Request} if the restriction is missing
      */
     @PostMapping("/{id}/restrictions/addAndReassign")
     public ResponseEntity<?> addRestrictionAndReassign(
@@ -98,10 +108,12 @@ public class PatientController {
     }
 
     /**
-     * UC12 – Add a single restriction string to the patient's restriction list.
-     * Example request:
-     * POST /patients/3/restrictions/add
-     * { "restriction": "ig3" }
+     * UC12 - Adds a single restriction to the patient's restriction list.
+     * POST {@code /patients/{id}/restrictions/add}
+     *
+     * @param id      patient id
+     * @param request JSON body containing {@code "restriction"}
+     * @return {@code 200 OK} with {@link PatientDailyOrderDTO}
      */
     @PostMapping("/{id}/restrictions/add")
     public ResponseEntity<PatientDailyOrderDTO> addRestriction(
@@ -121,11 +133,11 @@ public class PatientController {
     }
 
     /**
-     * Removes one or more restrictions from a patient.
+     * Removes one or more restrictions from a patient's restrictions list.
      *
-     * @param id   the patient's ID
-     * @param body contains a list of restrictions to remove
-     * @return updated patient meal information
+     * @param id   patient id
+     * @param body JSON body with {@code "remove"} as a list of restrictions.
+     * @return {@code 200 OK} with {@link PatientDailyOrderDTO}
      */
     @PatchMapping("/{id}/restrictions/remove")
     public ResponseEntity<PatientDailyOrderDTO> removeRestrictions(
@@ -142,10 +154,10 @@ public class PatientController {
     }
 
     /**
-     * Removes all restrictions from a patient.
+     * Removes all restrictions from a patient's restriction list.
      *
-     * @param id the patient's ID
-     * @return updated patient meal information
+     * @param id patient id
+     * @return {@code 200 OK} with {@link PatientDailyOrderDTO}
      */
     @DeleteMapping("/{id}/restrictions")
     public ResponseEntity<PatientDailyOrderDTO> clearAllRestrictions(@PathVariable Long id) {
@@ -160,9 +172,9 @@ public class PatientController {
     /**
      * Removes one or more allergies from a patient's allergy list.
      *
-     * @param id   the patient's ID
-     * @param body contains a list of allergies that should be removed
-     * @return updated patient meal information
+     * @param id   patient id
+     * @param body JSON body with {@code "remove"} as a list of allergies.
+     * @return {@code 200 OK} with {@link PatientDailyOrderDTO}
      */
     @PatchMapping("/{id}/allergies/remove")
     public ResponseEntity<PatientDailyOrderDTO> removeAllergy(
@@ -179,10 +191,10 @@ public class PatientController {
     }
 
     /**
-     * Removes all allergies from a patient's restriction list.
+     * Removes all allergies from a patient's allergy list.
      *
-     * @param id the patient's ID
-     * @return updated patient meal information
+     * @param id patient id
+     * @return {@code 200 OK} with {@link PatientDailyOrderDTO}
      */
     @DeleteMapping("/{id}/allergies")
     public ResponseEntity<PatientDailyOrderDTO> clearAllAllergies(@PathVariable Long id) {
@@ -195,12 +207,13 @@ public class PatientController {
     }
 
     /**
-     * UC1 – Orders a specific food type for a patient.
+     * UC1 - Orders a specific food type for a patient, updates the patient's food type,
+     * and creates today's {@link DailyOrder}.
      *
-     * @param id   the patient's ID
-     * @param body contains the chosen food type name
-     * @return a success message if the order was made, the
-     *         patient's ID and the food type, otherwise an error message
+     * @param id   patient id
+     * @param body JSON body with {@code "foodType"}
+     * @return {@code 200 OK} with a confirmation message describing the created order
+     *         or {@code 400 Bad Request} when {@code "foodType"} is missing.
      */
     @PostMapping("{id}/order")
     public ResponseEntity<?> orderFoodForPatient(@PathVariable Long id, @RequestBody Map<String, String> body) {
@@ -230,12 +243,12 @@ public class PatientController {
     }
 
     /**
-     * UC14 – Fix conflicts in a patient's daily order.
-     * This checks the patient's order for any restriction conflicts
-     * and automatically replaces meals where possible.
-     * 
-     * @param id the patient's ID
-     * @return the updated daily order and status message
+     * UC14 - Fixes conflicts in a patient's daily order by checking restrictions and
+     * automatically replacing meals when possible.
+     *
+     * @param id patient id
+     * @return {@code 200 OK} with a message, status and {@link PatientDailyOrderDTO} or
+     *         {@code 400 Bad Request} if the check fails.
      */
     @PatchMapping("/{id}/fixConflicts")
     public ResponseEntity<?> fixConflicts(@PathVariable Long id) {
@@ -268,10 +281,13 @@ public class PatientController {
     }
 
     /**
-     * UC13 – Ward staff deletes today’s order for one patient.
+     * UC13 - Deletes today's daily order for a specific patient.
+     * 
+     * Allows ward staff to remove the current day's {@link DailyOrder} for the given patient.
      *
-     * @param id the patient's ID
-     * @return a success or error message based on whether an order was found and deleted
+     * @param id patient id
+     * @return {@code 200 OK} with a confirmation message if the order was deleted
+     *         or {@code 404 Not Found} if no order existed for today.
      */
     @DeleteMapping("/{id}/order/today")
     public ResponseEntity<?> deleteTodaysOrder(@PathVariable Long id) {
