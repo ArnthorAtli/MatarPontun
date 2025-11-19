@@ -1,7 +1,6 @@
 package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.*;
-import is.hi.matarpontun.dto.PatientMapper;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.*;
 import org.springframework.stereotype.Service;
@@ -9,6 +8,8 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,23 +25,29 @@ public class WardService {
     private final DailyOrderService dailyOrderService;
     private final RoomRepository roomRepository;
     private final PatientRepository patientRepository;
+    private final DailyOrderRepository dailyOrderRepository;
 
     /**
-     * Constructs a new {@code WardService} with the required repositories and services.
+     * Constructs a new {@code WardService} with the required repositories and
+     * services.
      *
-     * @param wardRepository      the repository for persisting and retrieving {@link Ward} entities
-     * @param dailyOrderService   the service for generating and managing {@link DailyOrder}
-     * @param roomRepository      the repository for accessing {@link Room} entities
-     * @param patientRepository   the repository responsible for storing and retrieving {@link Patient} entities
+     * @param wardRepository    the repository for persisting and retrieving
+     *                          {@link Ward} entities
+     * @param dailyOrderService the service for generating and managing
+     *                          {@link DailyOrder}
+     * @param roomRepository    the repository for accessing {@link Room} entities
+     * @param patientRepository the repository responsible for storing and
+     *                          retrieving {@link Patient} entities
      */
     public WardService(WardRepository wardRepository,
-                       DailyOrderService dailyOrderService,
-                       RoomRepository roomRepository,
-                       PatientRepository patientRepository) {
+            DailyOrderService dailyOrderService,
+            RoomRepository roomRepository,
+            PatientRepository patientRepository, DailyOrderRepository dailyOrderRepository) {
         this.wardRepository = wardRepository;
         this.dailyOrderService = dailyOrderService;
         this.roomRepository = roomRepository;
         this.patientRepository = patientRepository;
+        this.dailyOrderRepository = dailyOrderRepository;
     }
 
     /**
@@ -89,7 +96,8 @@ public class WardService {
      *
      * @param wardName the ward’s name
      * @param password the ward’s password
-     * @return an optional {@link WardFullDTO} containing ward and patient details if authentication succeeds
+     * @return an optional {@link WardFullDTO} containing ward and patient details
+     *         if authentication succeeds
      */
     public Optional<WardFullDTO> signInAndGetData(String wardName, String password) {
         return wardRepository.findByWardNameAndPassword(wardName, password)
@@ -102,7 +110,8 @@ public class WardService {
      * @param wardName  the ward’s name
      * @param password  the ward’s password
      * @param patientId the id of the patient to retrieve
-     * @return an optional {@link PatientDailyOrderDTO} with the patient’s information if found and authorized
+     * @return an optional {@link PatientDailyOrderDTO} with the patient’s
+     *         information if found and authorized
      */
     public Optional<PatientDailyOrderDTO> signInAndGetPatientData(String wardName, String password, Long patientId) {
         return wardRepository.findByWardNameAndPassword(wardName, password)
@@ -123,8 +132,9 @@ public class WardService {
      * @param id  the id of the ward to update
      * @param req the {@link WardUpdateDTO} containing updated values
      * @return the updated {@link Ward}
-     * @throws EntityNotFoundException if the ward does not exist
-     * @throws IllegalArgumentException if the new name or password is invalid or if the name is already in use
+     * @throws EntityNotFoundException  if the ward does not exist
+     * @throws IllegalArgumentException if the new name or password is invalid or if
+     *                                  the name is already in use
      */
     @Transactional
     public Ward updateWard(Long id, WardUpdateDTO req) {
@@ -169,9 +179,11 @@ public class WardService {
     }
 
     /**
-     * UC17 - Deletes a ward and all associated rooms and patients in a cascading transaction.
+     * UC17 - Deletes a ward and all associated rooms and patients in a cascading
+     * transaction.
      * 
-     * The deletion order ensures all patients are removed before rooms and the ward itself.
+     * The deletion order ensures all patients are removed before rooms and the ward
+     * itself.
      *
      * @param wardId the id of the ward to delete
      * @throws EntityNotFoundException if the ward does not exist
@@ -181,7 +193,21 @@ public class WardService {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found with ID: " + wardId));
 
-        // Delete all patients in all rooms of the ward
+        LocalDate today = LocalDate.now();
+
+        // First, delete all daily orders for patients in the ward
+        for (Room room : ward.getRooms()) {
+            for (Patient patient : room.getPatients()) {
+                dailyOrderRepository.findByPatientAndOrderDate(patient, today)
+                        .ifPresent(order -> {
+                            order.setPatient(null);
+                            dailyOrderRepository.delete(order);
+                            System.out.println("Deleted today's order for patient " + patient.getName());
+                        });
+            }
+        }
+
+        // Then delete all patients in each room
         for (Room room : ward.getRooms()) {
             patientRepository.deleteAll(room.getPatients());
         }
@@ -189,8 +215,10 @@ public class WardService {
         // Delete all rooms in the ward
         roomRepository.deleteAll(ward.getRooms());
 
-        // Delete the ward itself
+        // Finally, delete the ward itself
         wardRepository.delete(ward);
+
+        System.out.println("Deleted ward '" + ward.getWardName() + "' and all associated data.");
     }
 
     /**
