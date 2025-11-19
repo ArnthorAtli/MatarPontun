@@ -45,8 +45,6 @@ public class PatientService {
      * @param patient the patient whose restrictions and allergies should be validated
      * @return {@code true} if a conflict is found; {@code false} otherwise
      */
-    // seinna til að bæta: when Meal.ingredients becomes a List<String>, this can
-    // loop directly over ingredients instead of string matching.
     public boolean checkMealForConflicts(Meal meal, Patient patient) {
         if (meal == null || meal.getIngredients() == null)
             return false;

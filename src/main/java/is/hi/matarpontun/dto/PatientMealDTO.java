@@ -4,7 +4,7 @@ import is.hi.matarpontun.model.Meal;
 
 import java.util.List;
 
-// record er tegund sem við notum fyrir klasa sem geyma gögn, býr til getters, settera og fleira....
+// Record er tegund sem við notum fyrir klasa sem geyma gögn
 public record PatientMealDTO(
         Long id,
         String name,

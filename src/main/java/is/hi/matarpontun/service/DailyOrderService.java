@@ -203,7 +203,7 @@ public class DailyOrderService {
         }
     }
 
-    // -----------------------HELPER FUNCTIONS-------------------------
+    // --- HELPER FUNCTIONS ---
 
     // Checks if any of the meals in the order conflict with patient's restrictions
     private void checkForRestrictions(DailyOrder order) {
@@ -308,10 +308,9 @@ public class DailyOrderService {
                 + " → " + order.getStatus());
     }
 
-    // Reynir að finna máltíð sem passar fyrir takmarkanir, annars skilar null
-
+    // Tries to find meals which fits the restrictions, else return null
     private Meal findSafeAlternative(FoodType currentFoodType, String category, List<String> restrictions) {
-        // --- Define food type groups ---
+        // Define food type groups
         List<List<String>> groups = List.of(
                 List.of("A1", "A2", "A3", "OP", "RDS-KF", "RDS-G"),
                 List.of("M1", "M2", "M3"),
@@ -333,7 +332,7 @@ public class DailyOrderService {
                 .filter(ft -> currentGroup.contains(ft.getTypeName()))
                 .toList();
 
-        // --- Check menus for same group ---
+        // Check menus for same group
         for (FoodType ft : foodTypesInGroup) {
             Menu menu = ft.getMenuOfTheDay();
             if (menu == null)
@@ -361,7 +360,7 @@ public class DailyOrderService {
             }
         }
 
-        // --- No safe match found ---
+        // No safe match found
         System.out.println(
                 "No safe alternative found for " + currentTypeName + " " + category + " → manual change required.");
         return null;
@@ -379,7 +378,7 @@ public class DailyOrderService {
                 });
     }
 
-    // for uc10
+    // For UC10
     public List<DailyOrder> getFilteredOrders(LocalDate date, String foodType, String wardName, String status) {
 
         if (wardName != null && date != null && foodType != null && status != null) {

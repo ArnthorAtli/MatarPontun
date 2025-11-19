@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-@Table( //cus only want one menu per diet per day
+@Table( //Because there is only one menu per diet per day
         name = "menus",
         uniqueConstraints = @UniqueConstraint(columnNames = {"food_type_id", "date"})
 )
@@ -15,7 +15,7 @@ public class Menu {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate date;    // one menu per foodType per day
+    private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "food_type_id")
@@ -48,7 +48,7 @@ public class Menu {
         this.foodType = foodType;
     }
 
-    // --- getters and setters ---
+    // --- Getters and Setters ---
     public Long getId() {
         return id;
     }
@@ -105,7 +105,6 @@ public class Menu {
         this.foodType = foodType;
     }
 
-    //kannski nota
     public Meal getMealByCategory(String category) {
         return switch (category.toLowerCase()) {
             case "breakfast" -> breakfast;

@@ -48,7 +48,6 @@ public class MealService {
     /**
      * Selects the correct meal for a given patient based on current time and their foodtype's menu.
      */
-    // á eftir að setja limit á allergies eða restriction - ennþá eftir? annars taka út
     public Meal selectMealForPatient(Patient patient) {
         if (patient == null || patient.getFoodType() == null) {
             return null;
@@ -60,10 +59,10 @@ public class MealService {
             return null; // no menu configured for this food type
         }
 
-        // Step 1: Determine current time
+        // Determine current time
         LocalTime now = LocalTime.now();
 
-        // Step 2: Pick meal based on the current hour
+        // Pick meal based on the current hour
         if (now.isBefore(LocalTime.of(10, 0))) {
             return menu.getBreakfast();
         } else if (now.isBefore(LocalTime.of(14, 0))) {

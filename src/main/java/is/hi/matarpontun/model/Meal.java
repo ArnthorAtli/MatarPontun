@@ -14,12 +14,6 @@ public class Meal {
 
     private String name;
 
-    /* Getum þá notað query
-    @ElementCollection
-    @CollectionTable(name = "meal_ingredients", joinColumns = @JoinColumn(name = "meal_id"))
-    @Column(name = "ingredient")
-    private List<String> ingredients;
-     */
     private String ingredients;
 
     private String category;
@@ -39,7 +33,7 @@ public class Meal {
         this.foodType = foodType;
     }
 
-    //------ getters and setters ------//
+    //------ Getters and Setters ------//
     
     public Long getId() {
         return id;
