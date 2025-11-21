@@ -14,6 +14,7 @@ public interface DailyOrderRepository extends JpaRepository<DailyOrder, Long> {
     Optional<DailyOrder> findByPatientAndOrderDate(Patient patient, LocalDate orderDate);
 
     // UC10 filters
+    List<DailyOrder> findAllByPatient(Patient patient);
     List<DailyOrder> findByOrderDate(LocalDate orderDate);
     List<DailyOrder> findByFoodType_TypeName(String typeName);
     List<DailyOrder> findByOrderDateAndFoodType_TypeName(LocalDate orderDate, String typeName);

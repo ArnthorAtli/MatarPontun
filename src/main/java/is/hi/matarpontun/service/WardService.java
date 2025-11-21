@@ -9,7 +9,6 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -193,17 +192,16 @@ public class WardService {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found with ID: " + wardId));
 
-        LocalDate today = LocalDate.now();
 
         // First, delete all daily orders for patients in the ward
         for (Room room : ward.getRooms()) {
             for (Patient patient : room.getPatients()) {
-                dailyOrderRepository.findByPatientAndOrderDate(patient, today)
-                        .ifPresent(order -> {
-                            order.setPatient(null);
-                            dailyOrderRepository.delete(order);
-                            System.out.println("Deleted today's order for patient " + patient.getName());
-                        });
+                List<DailyOrder> orders = dailyOrderRepository.findAllByPatient(patient);
+                for (DailyOrder order : orders) {
+                    order.setPatient(null);
+                    dailyOrderRepository.delete(order);
+                    System.out.println("Deleted today's order for patient " + patient.getName());
+                }
             }
         }
 

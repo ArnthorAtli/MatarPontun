@@ -2,9 +2,11 @@ package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.model.Room;
 import is.hi.matarpontun.model.Ward;
+import is.hi.matarpontun.model.DailyOrder;
 import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.repository.RoomRepository;
 import is.hi.matarpontun.repository.WardRepository;
+import is.hi.matarpontun.repository.DailyOrderRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,20 +25,27 @@ public class RoomService {
     private final WardRepository wardRepository;
     private final PatientService patientService;
     private final PatientRepository patientRepository;
+    private final DailyOrderRepository dailyOrderRepository;
 
     /**
-     * Constructs a new {@code RoomService} with required repositories and services..
+     * Constructs a new {@code RoomService} with required repositories and
+     * services..
      *
-     * @param roomRepository     the repository for persisting and retrieving {@link Room} entities
-     * @param wardRepository     the repository for accessing {@link Ward} entities
-     * @param patientService     the service used to create and manage {@link Patient} entities
-     * @param patientRepository  the repository responsible for storing and retrieving {@link Patient} entities
+     * @param roomRepository    the repository for persisting and retrieving
+     *                          {@link Room} entities
+     * @param wardRepository    the repository for accessing {@link Ward} entities
+     * @param patientService    the service used to create and manage
+     *                          {@link Patient} entities
+     * @param patientRepository the repository responsible for storing and
+     *                          retrieving {@link Patient} entities
      */
-    public RoomService(RoomRepository roomRepository, WardRepository wardRepository, PatientService patientService, PatientRepository patientRepository) {
+    public RoomService(RoomRepository roomRepository, WardRepository wardRepository, PatientService patientService,
+            PatientRepository patientRepository, DailyOrderRepository dailyOrderRepository) {
         this.roomRepository = roomRepository;
         this.wardRepository = wardRepository;
         this.patientService = patientService;
         this.patientRepository = patientRepository;
+        this.dailyOrderRepository = dailyOrderRepository;
     }
 
     /**
@@ -94,7 +103,8 @@ public class RoomService {
      * maintaining referential integrity.
      *
      * @param roomId the id of the room to delete
-     * @return a {@link Map} containing a confirmation message and the number of deleted patients
+     * @return a {@link Map} containing a confirmation message and the number of
+     *         deleted patients
      * @throws RuntimeException if the specified room does not exist
      */
     @Transactional
@@ -106,9 +116,14 @@ public class RoomService {
         // Find all patients in this room
         List<Patient> patientsInRoom = patientRepository.findByRoom(room);
 
-        // Delete patients first
-        if (!patientsInRoom.isEmpty()) {
-            patientRepository.deleteAll(patientsInRoom);
+        for (Patient patient : patientsInRoom) {
+            List<DailyOrder> orders = dailyOrderRepository.findAllByPatient(patient);
+
+            for (DailyOrder order : orders) {
+                order.setPatient(null); 
+                dailyOrderRepository.delete(order);
+                System.out.println("Deleted order (" + order.getOrderDate() + ") for " + patient.getName());
+            }
         }
 
         // Delete the room itself
