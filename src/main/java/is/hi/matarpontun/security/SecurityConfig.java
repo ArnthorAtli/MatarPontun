@@ -16,7 +16,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 
-    private boolean securityEnabled = true; // Kveikja eða slökkva á security
+    private boolean securityEnabled = false; // Kveikja eða slökkva á security
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
