@@ -86,6 +86,7 @@ public class WardController {
 
                     return ResponseEntity.ok(Map.of(
                             "message", "Login successful",
+                            "wardId", ward.getWardId(),
                             "wardName", ward.getWardName(),
                             "token", token));
                 })

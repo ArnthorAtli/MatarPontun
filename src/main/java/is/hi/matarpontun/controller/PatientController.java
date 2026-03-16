@@ -43,7 +43,8 @@ public class PatientController {
      * @return {@code 200 OK} with the ward’s patients on success
      *         or {@code 404 Not Found} if credentials are invalid
      */
-    @GetMapping("/all")
+    // @GetMapping("/all")
+    @PostMapping("/all")
     public ResponseEntity<?> getAllPatientsForWard(@RequestBody WardDTO request) {
         var wardPatientsInfo = wardService.signInAndGetData(request.wardName(), request.password());
 
