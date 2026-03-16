@@ -247,6 +247,6 @@ public class WardService {
                 })
                 .toList();
 
-        return new WardFullDTO(ward.getWardName(), patientDTOs);
+        return new WardFullDTO(ward.getId(), ward.getWardName(), patientDTOs);
     }
 }
