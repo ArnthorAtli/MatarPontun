@@ -19,6 +19,7 @@ public class PatientMapper {
                 patient.getAge(),
                 ward != null ? ward.getWardName() : null,
                 patient.getRoom() != null ? patient.getRoom().getRoomNumber() : null,
+                patient.getRoom() != null ? patient.getRoom().getQrCode() : null,
                 patient.getBedNumber(),
                 patient.getFoodType() != null ? patient.getFoodType().getTypeName() : null,
                 patient.getRestriction(),

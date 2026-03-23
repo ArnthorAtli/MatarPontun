@@ -231,6 +231,34 @@ public class PatientService {
     }
 
     /**
+     * Updates a patient’s name, food type, and restrictions in one call.
+     *
+     * @param id           the patient’s id
+     * @param name         new name (ignored if null or blank)
+     * @param foodTypeName new food type name (ignored if null or blank)
+     * @param restrictions full replacement list of restrictions (ignored if null)
+     * @return the updated {@link Patient}
+     */
+    public Patient updatePatient(Long id, String name, String foodTypeName, List<String> restrictions) {
+        Patient patient = patientRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
+
+        if (name != null && !name.isBlank()) {
+            patient.setName(name);
+        }
+        if (foodTypeName != null && !foodTypeName.isBlank()) {
+            FoodType newFoodType = foodTypeRepository.findByTypeNameIgnoreCase(foodTypeName)
+                    .orElseThrow(() -> new EntityNotFoundException("Food type ‘" + foodTypeName + "’ not found"));
+            patient.setFoodType(newFoodType);
+        }
+        if (restrictions != null) {
+            patient.getRestriction().clear();
+            patient.getRestriction().addAll(restrictions);
+        }
+        return patientRepository.save(patient);
+    }
+
+    /**
      * Updates a patient’s assigned {@link FoodType} based on a given food type name.
      *
      * @param patientId    the patient’s id

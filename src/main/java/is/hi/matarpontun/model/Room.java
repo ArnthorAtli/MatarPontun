@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -17,6 +18,9 @@ public class Room {
     private Long id;
 
     private String roomNumber;
+
+    @Column(unique = true)
+    private String qrCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
@@ -33,6 +37,7 @@ public class Room {
     public Room(String roomNumber, Ward ward) {
         this.roomNumber = roomNumber;
         this.ward = ward;
+        this.qrCode = "ROOM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     // --- Getters and Setters ---
@@ -44,6 +49,8 @@ public class Room {
     public void setWard(Ward ward) { this.ward = ward; }
     public List<Patient> getPatients() { return patients; }
     public void setPatients(List<Patient> patients) { this.patients = patients; }
+    public String getQrCode() { return qrCode; }
+    public void setQrCode(String qrCode) { this.qrCode = qrCode; }
 
     public void addPatient(Patient patient) {
         patients.add(patient);

@@ -10,6 +10,7 @@ public class PatientDailyOrderDTO {
     private int age;
     private String wardName;
     private String roomNumber;
+    private String roomQrCode;
     private int bedNumber;
     private String foodType;
     private List<String> restrictions;
@@ -23,7 +24,7 @@ public class PatientDailyOrderDTO {
     }
 
     public PatientDailyOrderDTO(
-            Long patientId, String name, int age, String wardName, String roomNumber, int bedNumber,
+            Long patientId, String name, int age, String wardName, String roomNumber, String roomQrCode, int bedNumber,
             String foodType, List<String> restrictions, List<String> allergies,
             LocalDate orderDate, String status, MealDTO meals) {
         this.patientId = patientId;
@@ -31,6 +32,7 @@ public class PatientDailyOrderDTO {
         this.age = age;
         this.wardName = wardName;
         this.roomNumber = roomNumber;
+        this.roomQrCode = roomQrCode;
         this.bedNumber = bedNumber;
         this.foodType = foodType;
         this.restrictions = restrictions;
@@ -46,6 +48,7 @@ public class PatientDailyOrderDTO {
     public int getAge() { return age; }
     public String getWardName() { return wardName; }
     public String getRoomNumber() { return roomNumber; }
+    public String getRoomQrCode() { return roomQrCode; }
     public int getBedNumber() { return bedNumber; }
     public String getFoodType() { return foodType; }
     public List<String> getRestrictions() { return restrictions; }

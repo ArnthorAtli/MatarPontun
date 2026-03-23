@@ -1,7 +1,9 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.*;
+import is.hi.matarpontun.model.Room;
 import is.hi.matarpontun.model.Ward;
+import is.hi.matarpontun.repository.RoomRepository;
 import is.hi.matarpontun.service.DailyOrderService;
 import is.hi.matarpontun.service.WardService;
 import is.hi.matarpontun.service.RoomService;
@@ -29,6 +31,7 @@ public class WardController {
     private final RoomService roomService;
     private final DailyOrderService dailyOrderService;
     private final JwtTokenUtil jwtTokenUtil;
+    private final RoomRepository roomRepository;
 
     /**
      * Constructs a new {@code WardController} with the required services.
@@ -39,11 +42,22 @@ public class WardController {
      * @param jwtTokenUtil      utility for issuing JWTs to authenticate wards.
      */
     public WardController(WardService wardService, RoomService roomService, DailyOrderService dailyOrderService,
-            JwtTokenUtil jwtTokenUtil) {
+            JwtTokenUtil jwtTokenUtil, RoomRepository roomRepository) {
         this.wardService = wardService;
         this.roomService = roomService;
         this.dailyOrderService = dailyOrderService;
         this.jwtTokenUtil = jwtTokenUtil;
+        this.roomRepository = roomRepository;
+    }
+
+    @GetMapping("/rooms/qr/{qrCode}")
+    public ResponseEntity<?> getRoomByQrCode(@PathVariable String qrCode) {
+        return roomRepository.findByQrCode(qrCode)
+                .map(room -> ResponseEntity.ok(Map.of(
+                        "wardId", room.getWard().getId(),
+                        "roomNumber", room.getRoomNumber(),
+                        "qrCode", room.getQrCode())))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -148,6 +162,25 @@ public class WardController {
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
         return ResponseEntity.status(404).body(Map.of("error", ex.getMessage()));
+    }
+
+    /**
+     * Creates a new room with randomly generated patients for an existing ward.
+     *
+     * @param wardId  the ward id
+     * @param request room number and number of patients to create
+     * @return {@code 200 OK} with the created room id and number
+     */
+    @PostMapping("/{wardId}/rooms")
+    public ResponseEntity<?> createRoom(
+            @PathVariable Long wardId,
+            @RequestBody RoomCreateRequestDTO request) {
+        var room = roomService.createRoomAndFillWithPatients(request.numberOfPatients(), wardId, request.roomNumber());
+        return ResponseEntity.ok(Map.of(
+                "message", "Room created successfully",
+                "roomId", room.getId(),
+                "roomNumber", room.getRoomNumber(),
+                "qrCode", room.getQrCode()));
     }
 
     /**

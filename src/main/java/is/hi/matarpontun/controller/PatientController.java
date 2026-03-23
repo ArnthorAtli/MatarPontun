@@ -244,6 +244,24 @@ public class PatientController {
     }
 
     /**
+     * Updates a patient's name, food type, and restrictions.
+     *
+     * @param id      patient id
+     * @param request updated fields
+     * @return {@code 200 OK} with updated {@link PatientDailyOrderDTO}
+     */
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> updatePatient(
+            @PathVariable Long id,
+            @RequestBody PatientUpdateRequestDTO request) {
+        Patient updated = patientService.updatePatient(
+                id, request.name(), request.foodTypeName(), request.restrictions());
+        DailyOrder order = dailyOrderService.findTodayOrderForPatient(updated);
+        PatientDailyOrderDTO dto = PatientMapper.toDailyOrderDTO(updated, updated.getWard(), order);
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
      * UC14 - Fixes conflicts in a patient's daily order by checking restrictions and
      * automatically replacing meals when possible.
      *
