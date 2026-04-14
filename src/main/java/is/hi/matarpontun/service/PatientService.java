@@ -200,7 +200,7 @@ public class PatientService {
      * @return the newly created {@link Patient}
      * @throws EntityNotFoundException if the default {@link FoodType} is missing
      */
-    public Patient createRandomPatient(Room room) {
+    public Patient createRandomPatient(Room room, int bedNumber) {
         Random random = new Random();
 
         // Generate name like "Patient_1234"
@@ -208,12 +208,6 @@ public class PatientService {
 
         // Generate random age between 10–70
         int age = 10 + random.nextInt(61);
-
-        // Determine bed number
-        int bedNumber = 1;
-        if (room.getPatients() != null && !room.getPatients().isEmpty()) {
-            bedNumber = room.getPatients().size() + 1;
-        }
 
         // Create patient
         Patient patient = new Patient();

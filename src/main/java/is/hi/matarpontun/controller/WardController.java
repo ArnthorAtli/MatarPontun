@@ -1,7 +1,7 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.*;
-import is.hi.matarpontun.model.Room;
+import is.hi.matarpontun.model.Patient;
 import is.hi.matarpontun.model.Ward;
 import is.hi.matarpontun.repository.RoomRepository;
 import is.hi.matarpontun.service.DailyOrderService;
@@ -132,12 +132,13 @@ public class WardController {
      */
     @PostMapping("/{id}/order")
     public ResponseEntity<?> orderMealsForWard(@PathVariable Long id) {
-        OrderDTO order = wardService.generateDailyOrdersForWard(id); // hér fer pöntunin fram
+        DailyOrderService.WardOrderResult result = wardService.generateDailyOrdersForWard(id);
 
         return ResponseEntity.ok(Map.of(
                 "message", "Daily orders successfully created and logged.",
-                "ward", order.wardName(),
-                "rooms", order.rooms()));
+                "ward", result.orderDTO().wardName(),
+                "rooms", result.orderDTO().rooms(),
+                "conflicts", result.conflicts()));
     }
 
     /**
@@ -175,12 +176,57 @@ public class WardController {
     public ResponseEntity<?> createRoom(
             @PathVariable Long wardId,
             @RequestBody RoomCreateRequestDTO request) {
-        var room = roomService.createRoomAndFillWithPatients(request.numberOfPatients(), wardId, request.roomNumber());
+        var room = roomService.createRoomAndFillWithPatients(request.maxPatients(), wardId, request.roomNumber());
+
+        List<Map<String, Object>> patientList = new java.util.ArrayList<>();
+        for (Patient p : room.getPatients()) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("id", p.getPatientID());
+            entry.put("name", p.getName());
+            entry.put("age", p.getAge());
+            entry.put("bedNumber", p.getBedNumber());
+            entry.put("foodType", p.getFoodType().getTypeName());
+            patientList.add(entry);
+        }
+
         return ResponseEntity.ok(Map.of(
                 "message", "Room created successfully",
                 "roomId", room.getId(),
                 "roomNumber", room.getRoomNumber(),
-                "qrCode", room.getQrCode()));
+                "maxPatients", room.getMaxPatients(),
+                "qrCode", room.getQrCode(),
+                "patients", patientList));
+    }
+
+    /**
+     * Returns all rooms for a given ward, including their patients.
+     *
+     * @param wardId the ward id
+     * @return {@code 200 OK} with a list of rooms and their patients
+     */
+    @GetMapping("/{wardId}/rooms")
+    public ResponseEntity<?> getRoomsForWard(@PathVariable Long wardId) {
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (var room : roomRepository.findByWard_Id(wardId)) {
+            List<Map<String, Object>> patientList = new java.util.ArrayList<>();
+            for (Patient p : room.getPatients()) {
+                Map<String, Object> entry = new HashMap<>();
+                entry.put("id", p.getPatientID());
+                entry.put("name", p.getName());
+                entry.put("age", p.getAge());
+                entry.put("bedNumber", p.getBedNumber());
+                entry.put("foodType", p.getFoodType().getTypeName());
+                patientList.add(entry);
+            }
+            Map<String, Object> roomMap = new HashMap<>();
+            roomMap.put("roomId", room.getId());
+            roomMap.put("roomNumber", room.getRoomNumber());
+            roomMap.put("maxPatients", room.getMaxPatients());
+            roomMap.put("qrCode", room.getQrCode());
+            roomMap.put("patients", patientList);
+            result.add(roomMap);
+        }
+        return ResponseEntity.ok(result);
     }
 
     /**

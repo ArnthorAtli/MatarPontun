@@ -225,8 +225,9 @@ public class PatientController {
         // Update patient's food type using the service
         patientService.updatePatientFoodType(id, foodType);
 
-        // Order daily meals for the patient
-        DailyOrder order = dailyOrderService.orderFoodTypeForPatient(id);
+        // Order daily meals and run restriction checks
+        DailyOrderService.OrderResult result = dailyOrderService.orderFoodTypeForPatient(id);
+        DailyOrder order = result.order();
 
         return ResponseEntity.ok(Map.of(
                 "message", "Daily order created for patient",
@@ -240,7 +241,8 @@ public class PatientController {
                         order.getAfternoonSnack() != null ? order.getAfternoonSnack().getName() : "N/A",
                         "dinner", order.getDinner() != null ? order.getDinner().getName() : "N/A",
                         "nightSnack", order.getNightSnack() != null ? order.getNightSnack().getName() : "N/A"),
-                "status", order.getStatus()));
+                "status", order.getStatus(),
+                "conflicts", result.conflicts()));
     }
 
     /**

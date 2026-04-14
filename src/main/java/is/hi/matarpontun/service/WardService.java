@@ -56,7 +56,7 @@ public class WardService {
      * @return an {@link OrderDTO} summarizing generated orders
      * @throws EntityNotFoundException if the ward does not exist
      */
-    public OrderDTO generateDailyOrdersForWard(Long wardId) {
+    public DailyOrderService.WardOrderResult generateDailyOrdersForWard(Long wardId) {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new EntityNotFoundException("Ward not found: " + wardId));
 

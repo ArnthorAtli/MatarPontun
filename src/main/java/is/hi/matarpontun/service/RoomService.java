@@ -67,25 +67,26 @@ public class RoomService {
      * Creates a new {@link Room} under the given ward and fills it with randomly
      * generated {@link Patient}s.
      *
-     * @param numberOfPatients the number of patients to create
+     * @param maxPatients the capacity of the room (also the number of patients to create)
      * @param wardId           the id of the ward to which the room belongs
      * @param roomNumber       the identifier of the new room
      * @return the created {@link Room} including its assigned patients
      * @throws EntityNotFoundException if the ward does not exist
      */
     @Transactional
-    public Room createRoomAndFillWithPatients(int numberOfPatients, Long wardId, String roomNumber) {
+    public Room createRoomAndFillWithPatients(int maxPatients, Long wardId, String roomNumber) {
         Ward ward = wardRepository.findById(wardId)
                 .orElseThrow(() -> new EntityNotFoundException("Ward with ID " + wardId + " not found."));
 
         // Create and save the room
-        Room room = new Room(roomNumber, ward);
+        Room room = new Room(roomNumber, ward, maxPatients);
         Room savedRoom = roomRepository.save(room);
 
-        // Create random patients and link them to the room
+        // Create random patients with sequential bed numbers (i+1) to avoid the
+        // stale-list bug where room.getPatients() always returns empty mid-loop.
         List<Patient> createdPatients = new ArrayList<>();
-        for (int i = 0; i < numberOfPatients; i++) {
-            Patient patient = patientService.createRandomPatient(savedRoom);
+        for (int i = 0; i < maxPatients; i++) {
+            Patient patient = patientService.createRandomPatient(savedRoom, i + 1);
             createdPatients.add(patient);
         }
 

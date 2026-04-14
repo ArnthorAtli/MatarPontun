@@ -1,17 +1,22 @@
 package is.hi.matarpontun.controller;
 
 import is.hi.matarpontun.dto.MealDTO;
+import is.hi.matarpontun.model.FoodType;
 import is.hi.matarpontun.model.Meal;
 import is.hi.matarpontun.model.Menu;
-import is.hi.matarpontun.service.MealService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.MealRepository;
 import is.hi.matarpontun.repository.MenuRepository;
-import is.hi.matarpontun.service.MenuService;
-import java.util.Map;
-import java.util.List;
 import is.hi.matarpontun.service.FoodTypeService;
+import is.hi.matarpontun.service.MealService;
+import is.hi.matarpontun.service.MenuService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * REST controller responsible for handling requests related to meals and menus.
@@ -25,23 +30,56 @@ public class MealController {
     private final MenuRepository menuRepository;
     private final MenuService menuService;
     private final FoodTypeService foodTypeService;
+    private final FoodTypeRepository foodTypeRepository;
 
-
-    /**
-     * Constructs a new {@code MealController} with required services and repositories.
-     *
-     * @param mealService    the service responsible for business logic related to creating and updating meals
-     * @param mealRepository the repository responsible for accessing {@link Meal} entities
-     * @param menuRepository the repository responsible for accessing {@link Menu} entities
-     * @param menuService    the service responsible for business logic related to generating and assigning menus
-     */
     public MealController(MealService mealService, MealRepository mealRepository, MenuRepository menuRepository,
-            MenuService menuService, FoodTypeService foodTypeService) {
+            MenuService menuService, FoodTypeService foodTypeService, FoodTypeRepository foodTypeRepository) {
         this.mealService = mealService;
         this.mealRepository = mealRepository;
         this.menuRepository = menuRepository;
-        this.foodTypeService = foodTypeService;
         this.menuService = menuService;
+        this.foodTypeService = foodTypeService;
+        this.foodTypeRepository = foodTypeRepository;
+    }
+
+    // -------------------------------------------------------------------------
+    // Response records
+    // -------------------------------------------------------------------------
+
+    /** Summary of a food type, including the ID of its currently assigned menuOfTheDay. */
+    record FoodTypeSummary(Long id, String typeName, String description, Long menuId) {}
+
+    /** A single meal slot within a menu (one course of the day). */
+    record MealSlot(String name, String ingredients) {}
+
+    /** Full menu detail returned to the client for a given food type. */
+    record MenuDetail(
+            Long foodTypeId,
+            String foodTypeName,
+            Long menuId,
+            MealSlot breakfast,
+            MealSlot lunch,
+            MealSlot afternoonSnack,
+            MealSlot dinner,
+            MealSlot nightSnack
+    ) {}
+
+    /**
+     * GET {@code /meals/food-types}
+     *
+     * Returns all food types. menuId is the ID of the food type's currently assigned
+     * menuOfTheDay, or null if none has been set.
+     */
+    @GetMapping("/food-types")
+    public ResponseEntity<List<FoodTypeSummary>> getAllFoodTypes() {
+        List<FoodTypeSummary> result = foodTypeRepository.findAll().stream()
+                .map(ft -> {
+                    Menu menu = ft.getMenuOfTheDay();
+                    Long menuId = menu != null ? menu.getId() : null;
+                    return new FoodTypeSummary(ft.getId(), ft.getTypeName(), ft.getDescription(), menuId);
+                })
+                .toList();
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -172,7 +210,6 @@ public class MealController {
         public int getDaysInTheFuture() {
             return daysInTheFuture;
         }
-        //Aldrei notað
         public void setDaysInTheFuture(int daysInTheFuture) {
             this.daysInTheFuture = daysInTheFuture;
         }
@@ -198,11 +235,10 @@ public class MealController {
 
     /**
      * POST {@code /meals/resetMenusOfTheDay}
-     * 
+     *
      * Clears the "menu of the day" for all food types so menus can be safely deleted.
      *
-     * @return {@code 200 OK} with a confirmation message and the number of
-     *         affected food types
+     * @return {@code 200 OK} with a confirmation message and the number of affected food types
      */
     @PostMapping("/resetMenusOfTheDay")
     public ResponseEntity<?> resetMenusOfTheDay() {
@@ -213,4 +249,40 @@ public class MealController {
         ));
     }
 
+    /**
+     * GET {@code /meals/menu/{foodTypeId}}
+     *
+     * Returns the menuOfTheDay assigned to the given food type, with full meal details
+     * (name and ingredients) for each slot.
+     *
+     * @param foodTypeId the ID of the food type
+     * @return {@code 200 OK} with {@link MenuDetail}, or {@code 404} if the food type
+     *         doesn't exist or has no menu assigned
+     */
+    @GetMapping("/menu/{foodTypeId}")
+    public ResponseEntity<MenuDetail> getMenuForFoodType(@PathVariable Long foodTypeId) {
+        Optional<FoodType> ftOpt = foodTypeRepository.findById(foodTypeId);
+        if (ftOpt.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        FoodType ft = ftOpt.get();
+        Menu menu = ft.getMenuOfTheDay();
+        if (menu == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+
+        return ResponseEntity.ok(new MenuDetail(
+                ft.getId(),
+                ft.getTypeName(),
+                menu.getId(),
+                toSlot(menu.getBreakfast()),
+                toSlot(menu.getLunch()),
+                toSlot(menu.getAfternoonSnack()),
+                toSlot(menu.getDinner()),
+                toSlot(menu.getNightSnack())
+        ));
+    }
+
+    /** Maps a {@link Meal} to its slim {@link MealSlot} representation. Returns null for unset slots. */
+    private MealSlot toSlot(Meal meal) {
+        if (meal == null) return null;
+        return new MealSlot(meal.getName(), meal.getIngredients());
+    }
 }

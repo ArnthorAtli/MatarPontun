@@ -22,6 +22,9 @@ public class Room {
     @Column(unique = true)
     private String qrCode;
 
+    @Column(columnDefinition = "integer default 0")
+    private int maxPatients;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ward_id")
     @JsonBackReference("ward-rooms")
@@ -35,8 +38,13 @@ public class Room {
     public Room() {}
 
     public Room(String roomNumber, Ward ward) {
+        this(roomNumber, ward, 0);
+    }
+
+    public Room(String roomNumber, Ward ward, int maxPatients) {
         this.roomNumber = roomNumber;
         this.ward = ward;
+        this.maxPatients = maxPatients;
         this.qrCode = "ROOM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
@@ -51,6 +59,8 @@ public class Room {
     public void setPatients(List<Patient> patients) { this.patients = patients; }
     public String getQrCode() { return qrCode; }
     public void setQrCode(String qrCode) { this.qrCode = qrCode; }
+    public int getMaxPatients() { return maxPatients; }
+    public void setMaxPatients(int maxPatients) { this.maxPatients = maxPatients; }
 
     public void addPatient(Patient patient) {
         patients.add(patient);

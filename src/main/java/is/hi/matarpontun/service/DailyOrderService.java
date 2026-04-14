@@ -2,12 +2,15 @@ package is.hi.matarpontun.service;
 
 import is.hi.matarpontun.dto.DailyOrderSummaryDTO;
 import is.hi.matarpontun.dto.OrderDTO;
+import is.hi.matarpontun.dto.PatientConflictSummaryDTO;
+import is.hi.matarpontun.dto.SlotConflictDTO;
 import is.hi.matarpontun.model.*;
 import is.hi.matarpontun.repository.DailyOrderRepository;
 import is.hi.matarpontun.repository.FoodTypeRepository;
 import is.hi.matarpontun.repository.PatientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +23,12 @@ public class DailyOrderService {
     private final DailyOrderRepository dailyOrderRepository;
     private final PatientRepository patientRepository;
     private final FoodTypeRepository foodTypeRepository;
+
+    /** Wraps a saved order together with any slot conflicts found during restriction checking. */
+    public record OrderResult(DailyOrder order, List<SlotConflictDTO> conflicts) {}
+
+    /** Wraps the ward-level OrderDTO together with per-patient conflict summaries. */
+    public record WardOrderResult(OrderDTO orderDTO, List<PatientConflictSummaryDTO> conflicts) {}
 
     /**
      * Constructs a new {@code DailyOrderService} with required repositories.
@@ -50,7 +59,8 @@ public class DailyOrderService {
      * @throws IllegalStateException   if the patient has no assigned
      *                                 {@link FoodType}.
      */
-    public DailyOrder orderFoodTypeForPatient(Long patientId) {
+    @Transactional
+    public OrderResult orderFoodTypeForPatient(Long patientId) {
         Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new EntityNotFoundException("Patient not found"));
 
@@ -92,14 +102,15 @@ public class DailyOrderService {
         order.setRoomNumber(patient.getRoom() != null ? patient.getRoom().getRoomNumber() : null);
         order.setStatus("SUBMITTED");
 
-        // Save it before applying restrictions
+        // Save before restriction check so the entity is managed
         dailyOrderRepository.save(order);
 
-        // Check restrictions
-        checkForRestrictions(order);
+        // Check restrictions — captures which slots conflicted and what was done
+        List<SlotConflictDTO> conflicts = checkForRestrictions(order);
 
-        // Save again if restrictions modified meals or status
-        return dailyOrderRepository.save(order);
+        // Save again to persist any meal swaps and updated status
+        DailyOrder saved = dailyOrderRepository.save(order);
+        return new OrderResult(saved, conflicts);
     }
 
     /**
@@ -109,24 +120,27 @@ public class DailyOrderService {
      * @param ward the ward to process
      * @return an {@link OrderDTO} containing patient orders based on rooms
      */
-    public OrderDTO generateOrdersForWard(Ward ward) {
+    public WardOrderResult generateOrdersForWard(Ward ward) {
         List<OrderDTO.RoomInfo> roomInfos = new ArrayList<>();
+        List<PatientConflictSummaryDTO> allConflicts = new ArrayList<>();
 
-        // Loop through each room in the ward
         for (Room room : ward.getRooms()) {
             List<OrderDTO.PatientInfo> patientInfos = new ArrayList<>();
 
-            // Loop through each patient in the room
             for (Patient patient : room.getPatients()) {
                 Long id = patient.getPatientID();
-                if (id == null) {
-                    continue;
-                }
+                if (id == null) continue;
 
                 try {
-                    DailyOrder order = orderFoodTypeForPatient(id);
+                    OrderResult result = orderFoodTypeForPatient(id);
+                    DailyOrder order = result.order();
 
-                    // Map to DTO info
+                    // Collect conflicts for patients that had any
+                    if (!result.conflicts().isEmpty()) {
+                        allConflicts.add(new PatientConflictSummaryDTO(
+                                patient.getName(), id, result.conflicts(), order.getStatus()));
+                    }
+
                     patientInfos.add(new OrderDTO.PatientInfo(
                             patient.getName(),
                             order.getFoodType() != null ? order.getFoodType().getTypeName() : "",
@@ -143,13 +157,12 @@ public class DailyOrderService {
                 }
             }
 
-            // Add room info if there are any patients
             if (!patientInfos.isEmpty()) {
                 roomInfos.add(new OrderDTO.RoomInfo(room.getRoomNumber(), patientInfos));
             }
         }
 
-        return new OrderDTO(ward.getWardName(), roomInfos);
+        return new WardOrderResult(new OrderDTO(ward.getWardName(), roomInfos), allConflicts);
     }
 
     /**
@@ -205,13 +218,13 @@ public class DailyOrderService {
 
     // --- HELPER FUNCTIONS ---
 
-    // Checks if any of the meals in the order conflict with patient's restrictions
-    private void checkForRestrictions(DailyOrder order) {
+    // Checks each meal slot for restriction conflicts, auto-replaces where possible,
+    // updates the order's status, and returns a list of SlotConflictDTOs for UI display.
+    private List<SlotConflictDTO> checkForRestrictions(DailyOrder order) {
         Patient patient = order.getPatient();
+        List<SlotConflictDTO> conflicts = new ArrayList<>();
 
-        // Parse restriction string (e.g. "milk, nuts, gluten")
         String restrictionString = String.join(",", patient.getRestriction());
-
         List<String> restrictions = List.of(restrictionString.split(","))
                 .stream()
                 .map(String::trim)
@@ -222,80 +235,74 @@ public class DailyOrderService {
         boolean autoChanged = false;
         boolean needsManual = false;
 
-        // Helper to detect conflicts
-        java.util.function.Function<Meal, Boolean> hasConflict = meal -> {
-            if (meal == null || meal.getIngredients() == null)
-                return false;
-
+        // Returns the first restriction that matches the meal's ingredients (word-boundary),
+        // or null if no conflict is found.
+        java.util.function.Function<Meal, String> findConflict = meal -> {
+            if (meal == null || meal.getIngredients() == null) return null;
             String ingredients = meal.getIngredients().toLowerCase();
-
             for (String r : restrictions) {
-                if (r == null || r.isBlank())
-                    continue;
-                String token = r.toLowerCase();
-
-                // Match token only when NOT part of a larger alphanumeric string
-                String regex = "(?<![a-z0-9])" + java.util.regex.Pattern.quote(token) + "(?![a-z0-9])";
-
+                if (r == null || r.isBlank()) continue;
+                String regex = "(?<![a-z0-9])" + java.util.regex.Pattern.quote(r) + "(?![a-z0-9])";
                 if (java.util.regex.Pattern.compile(regex).matcher(ingredients).find()) {
-                    return true; // exact match found
+                    return r;
                 }
             }
-            return false;
+            return null;
         };
 
-        // Check each meal and replace if necessary
-        if (hasConflict.apply(order.getBreakfast())) {
+        // Helper to process one slot: find conflict, attempt swap, record result.
+        String matched;
+
+        matched = findConflict.apply(order.getBreakfast());
+        if (matched != null) {
+            String original = order.getBreakfast().getName();
             Meal replacement = findSafeAlternative(order.getFoodType(), "breakfast", restrictions);
-            if (replacement != null) {
-                order.setBreakfast(replacement);
-                autoChanged = true;
-            } else {
-                needsManual = true;
-            }
+            if (replacement != null) { order.setBreakfast(replacement); autoChanged = true; }
+            else needsManual = true;
+            conflicts.add(new SlotConflictDTO("Breakfast", original, matched,
+                    replacement != null ? replacement.getName() : null));
         }
 
-        if (hasConflict.apply(order.getLunch())) {
+        matched = findConflict.apply(order.getLunch());
+        if (matched != null) {
+            String original = order.getLunch().getName();
             Meal replacement = findSafeAlternative(order.getFoodType(), "lunch", restrictions);
-            if (replacement != null) {
-                order.setLunch(replacement);
-                autoChanged = true;
-            } else {
-                needsManual = true;
-            }
+            if (replacement != null) { order.setLunch(replacement); autoChanged = true; }
+            else needsManual = true;
+            conflicts.add(new SlotConflictDTO("Lunch", original, matched,
+                    replacement != null ? replacement.getName() : null));
         }
 
-        if (hasConflict.apply(order.getAfternoonSnack())) {
+        matched = findConflict.apply(order.getAfternoonSnack());
+        if (matched != null) {
+            String original = order.getAfternoonSnack().getName();
             Meal replacement = findSafeAlternative(order.getFoodType(), "afternoonsnack", restrictions);
-            if (replacement != null) {
-                order.setAfternoonSnack(replacement);
-                autoChanged = true;
-            } else {
-                needsManual = true;
-            }
+            if (replacement != null) { order.setAfternoonSnack(replacement); autoChanged = true; }
+            else needsManual = true;
+            conflicts.add(new SlotConflictDTO("Afternoon Snack", original, matched,
+                    replacement != null ? replacement.getName() : null));
         }
 
-        if (hasConflict.apply(order.getDinner())) {
+        matched = findConflict.apply(order.getDinner());
+        if (matched != null) {
+            String original = order.getDinner().getName();
             Meal replacement = findSafeAlternative(order.getFoodType(), "dinner", restrictions);
-            if (replacement != null) {
-                order.setDinner(replacement);
-                autoChanged = true;
-            } else {
-                needsManual = true;
-            }
+            if (replacement != null) { order.setDinner(replacement); autoChanged = true; }
+            else needsManual = true;
+            conflicts.add(new SlotConflictDTO("Dinner", original, matched,
+                    replacement != null ? replacement.getName() : null));
         }
 
-        if (hasConflict.apply(order.getNightSnack())) {
+        matched = findConflict.apply(order.getNightSnack());
+        if (matched != null) {
+            String original = order.getNightSnack().getName();
             Meal replacement = findSafeAlternative(order.getFoodType(), "nightsnack", restrictions);
-            if (replacement != null) {
-                order.setNightSnack(replacement);
-                autoChanged = true;
-            } else {
-                needsManual = true;
-            }
+            if (replacement != null) { order.setNightSnack(replacement); autoChanged = true; }
+            else needsManual = true;
+            conflicts.add(new SlotConflictDTO("Night Snack", original, matched,
+                    replacement != null ? replacement.getName() : null));
         }
 
-        // Set final status
         if (needsManual) {
             order.setStatus("NEEDS MANUAL CHANGE");
         } else if (autoChanged) {
@@ -305,64 +312,86 @@ public class DailyOrderService {
         }
 
         System.out.println("Checked restrictions for " + patient.getName()
-                + " → " + order.getStatus());
+                + " → " + order.getStatus() + " (" + conflicts.size() + " conflict(s))");
+        return conflicts;
     }
 
-    // Tries to find meals which fits the restrictions, else return null
+    // Tries to find a safe alternative meal from the same food-type group.
+    // Returns null if no conflict-free meal exists (manual change required).
     private Meal findSafeAlternative(FoodType currentFoodType, String category, List<String> restrictions) {
-        // Define food type groups
         List<List<String>> groups = List.of(
                 List.of("A1", "A2", "A3", "OP", "RDS-KF", "RDS-G"),
                 List.of("M1", "M2", "M3"),
                 List.of("F1", "F1-S", "F1-M", "F2", "F3", "F4", "F4-S", "F5"));
 
         String currentTypeName = currentFoodType.getTypeName();
+
         Optional<List<String>> currentGroupOpt = groups.stream()
                 .filter(g -> g.contains(currentTypeName))
                 .findFirst();
 
         if (currentGroupOpt.isEmpty()) {
-            // Needs manual change
+            System.out.println("[ALT] " + currentTypeName + " not in any known group — manual change required for " + category);
             return null;
         }
 
         List<String> currentGroup = currentGroupOpt.get();
+        System.out.println("[ALT] Looking for safe " + category + " alternative for " + currentTypeName
+                + " — searching group " + currentGroup + " with restrictions " + restrictions);
 
         List<FoodType> foodTypesInGroup = foodTypeRepository.findAll().stream()
                 .filter(ft -> currentGroup.contains(ft.getTypeName()))
                 .toList();
 
-        // Check menus for same group
         for (FoodType ft : foodTypesInGroup) {
             Menu menu = ft.getMenuOfTheDay();
-            if (menu == null)
+            if (menu == null) {
+                System.out.println("[ALT]   " + ft.getTypeName() + " → no menuOfTheDay assigned, skipping");
                 continue;
+            }
 
             Meal candidate = switch (category.toLowerCase()) {
-                case "breakfast" -> menu.getBreakfast();
-                case "lunch" -> menu.getLunch();
-                case "afternoonsnack" -> menu.getAfternoonSnack();
-                case "dinner" -> menu.getDinner();
-                case "nightsnack" -> menu.getNightSnack();
-                default -> null;
+                case "breakfast"     -> menu.getBreakfast();
+                case "lunch"         -> menu.getLunch();
+                case "afternoonsnack"-> menu.getAfternoonSnack();
+                case "dinner"        -> menu.getDinner();
+                case "nightsnack"    -> menu.getNightSnack();
+                default              -> null;
             };
 
-            if (candidate == null || candidate.getIngredients() == null)
+            if (candidate == null) {
+                System.out.println("[ALT]   " + ft.getTypeName() + " → no meal in slot '" + category + "', skipping");
                 continue;
+            }
+            if (candidate.getIngredients() == null) {
+                System.out.println("[ALT]   " + ft.getTypeName() + " → meal '" + candidate.getName()
+                        + "' has no ingredients listed, skipping");
+                continue;
+            }
 
             String ingredients = candidate.getIngredients().toLowerCase();
-            boolean hasConflict = restrictions.stream().anyMatch(ingredients::contains);
+
+            // Use the same word-boundary regex as checkForRestrictions so that e.g.
+            // restriction "milk" does NOT falsely match "buttermilk"
+            boolean hasConflict = restrictions.stream().anyMatch(token -> {
+                String regex = "(?<![a-z0-9])" + java.util.regex.Pattern.quote(token) + "(?![a-z0-9])";
+                boolean matched = java.util.regex.Pattern.compile(regex).matcher(ingredients).find();
+                if (matched) {
+                    System.out.println("[ALT]   " + ft.getTypeName() + " → meal '" + candidate.getName()
+                            + "' rejected: restriction '" + token + "' matched in ingredients [" + ingredients + "]");
+                }
+                return matched;
+            });
 
             if (!hasConflict) {
-                System.out.println("Auto-changed " + category + " for " + currentTypeName +
-                        " → using " + ft.getTypeName() + " menu of the day meal: " + candidate.getName());
+                System.out.println("[ALT]   " + ft.getTypeName() + " → meal '" + candidate.getName()
+                        + "' is safe — using as replacement for " + currentTypeName + " " + category);
                 return candidate;
             }
         }
 
-        // No safe match found
-        System.out.println(
-                "No safe alternative found for " + currentTypeName + " " + category + " → manual change required.");
+        System.out.println("[ALT] No safe alternative found for " + currentTypeName + " " + category
+                + " — manual change required");
         return null;
     }
 
